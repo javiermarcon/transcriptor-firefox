@@ -230,4 +230,26 @@ describe("background-controller", () => {
     assert.equal(result.tab.onMeet, false);
     assert.equal(result.ok, true);
   });
+
+  it("prioriza la pestaña enviada por el popup sobre getActiveTab", async () => {
+    const controller = createBackgroundController({
+      protocol: Protocol,
+      meetTab: MeetTab,
+      client: createFakeClient({}),
+      getActiveTab: async () => ({
+        url: "https://example.com",
+        title: "Example",
+      }),
+    });
+
+    const result = await controller.handleMessage({
+      type: "GET_STATUS",
+      tab: {
+        url: "https://meet.google.com/abc-defg-hij",
+        title: "Standup",
+      },
+    });
+    assert.equal(result.tab.onMeet, true);
+    assert.equal(result.tab.title, "Standup");
+  });
 });

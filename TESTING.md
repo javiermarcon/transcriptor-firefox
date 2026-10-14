@@ -8,7 +8,7 @@
 | **c8**                                    | Cobertura      | Umbral CI del **99%** (statements/branches/functions/lines) sobre `shared/` y `scripts/` |
 | **ESLint 9**                              | Lint JS        | Detecta `eval`, variables huérfanas y errores obvios sin imponer un framework            |
 | **Prettier 3**                            | Formato        | Formato reproducible de JS/JSON/HTML/CSS/Markdown                                        |
-| **`scripts/validate-manifest.js`**        | Gate de config | Verifica ID fijo, permisos mínimos y `background.scripts` Firefox                        |
+| **`scripts/validate-manifest.js`**        | Gate de config | Verifica ID fijo, permisos mínimos y `background.page` Firefox                           |
 | **pre-commit**                            | Hooks Git      | Misma idea que el repo Python: controles locales antes del commit                        |
 
 No se usa Vitest ni Jest: añadirían un segundo runner sin ganancia clara sobre `node:test` para este tamaño de proyecto.

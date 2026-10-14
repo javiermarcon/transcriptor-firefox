@@ -48,6 +48,60 @@
       : "Detener y finalizar";
   }
 
+  function isConnectionError(err) {
+    const message = String((err && err.message) || err || "");
+    return /Receiving end does not exist|Could not establish connection/i.test(
+      message
+    );
+  }
+
+  async function wakeBackground() {
+    if (typeof browser.runtime.getBackgroundPage !== "function") {
+      return;
+    }
+    try {
+      await browser.runtime.getBackgroundPage();
+    } catch (_err) {
+      // En ventanas privadas puede fallar; sendMessage sigue siendo el canal.
+    }
+  }
+
+  async function sendToBackground(message) {
+    await wakeBackground();
+    try {
+      return await browser.runtime.sendMessage(message);
+    } catch (err) {
+      if (!isConnectionError(err)) {
+        throw err;
+      }
+      // Carrera conocida en Firefox MV3: el primer mensaje despierta el event page.
+      await wakeBackground();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      return browser.runtime.sendMessage(message);
+    }
+  }
+
+  function humanizeBackgroundError(err) {
+    if (isConnectionError(err)) {
+      return "No se pudo hablar con el proceso en segundo plano. Recargá la extensión en about:debugging y volvé a abrir el popup.";
+    }
+    return err && err.message
+      ? err.message
+      : "No se pudo comunicar con el proceso en segundo plano.";
+  }
+
+  async function readActiveTab() {
+    try {
+      const tabs = await browser.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+      return tabs[0] || null;
+    } catch (_err) {
+      return null;
+    }
+  }
+
   async function send(type, extra = {}) {
     current = Object.assign({}, current, {
       busy: true,
@@ -55,8 +109,9 @@
     });
     render();
     try {
-      const result = await browser.runtime.sendMessage(
-        Object.assign({ type }, extra)
+      const tab = await readActiveTab();
+      const result = await sendToBackground(
+        Object.assign({ type, tab }, extra)
       );
       current = applyBackgroundResult(current, result);
     } catch (err) {
@@ -65,10 +120,7 @@
         transcriptorStatus: "error",
         error: {
           code: "BACKGROUND_UNAVAILABLE",
-          message:
-            err && err.message
-              ? err.message
-              : "No se pudo comunicar con el proceso en segundo plano.",
+          message: humanizeBackgroundError(err),
         },
       });
     } finally {

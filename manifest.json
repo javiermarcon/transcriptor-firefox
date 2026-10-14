@@ -22,13 +22,7 @@
     }
   },
   "background": {
-    "scripts": [
-      "shared/protocol.js",
-      "shared/native-client.js",
-      "shared/meet-tab.js",
-      "shared/background-controller.js",
-      "background/background.js"
-    ]
+    "page": "background/background.html"
   },
   "permissions": ["nativeMessaging", "activeTab"]
 }

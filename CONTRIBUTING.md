@@ -66,4 +66,4 @@ Cuando se solicite un commit, el mensaje debe explicar el **porqué**, y los hoo
 - No modifiques `/home/javier/proyectos/meetings/transcriptor` desde tareas de este repo.
 - No debilites ESLint, Prettier, tests o hooks para “hacer pasar” un cambio.
 - No declares verificaciones no ejecutadas.
-- Mantené compatibilidad Firefox (`browser.*`, `background.scripts`, ID fijo).
+- Mantené compatibilidad Firefox (`browser.*`, `background.page`, ID fijo).

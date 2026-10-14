@@ -20,7 +20,7 @@ flowchart LR
 - Manifest V3.
 - ID fijo: `meetings-transcriptor@example.org`.
 - `strict_min_version`: Firefox 121.
-- Background: `background.scripts` (event page Firefox). **No** se usa `service_worker` (Firefox no lo requiere aquí y se evita ambigüedad con Chrome).
+- Background: `background.page` → `background/background.html` (event page Firefox). **No** se usa `service_worker`.
 - Permisos: `nativeMessaging`, `activeTab`.
 - Sin `host_permissions`, sin content scripts, sin `optional_permissions`.
 

@@ -37,7 +37,7 @@ Hasta validar un host real, no se debe asumir que una grabación de reunión com
 
 ## Requisitos
 
-- Firefox 121+ (Manifest V3 con `background.scripts`).
+- Firefox 121+ (Manifest V3 con `background.page`).
 - Node.js ≥ 18 y npm (desarrollo / calidad).
 - `pre-commit` (hooks Git de desarrollo).
 - Host `com.meetings.transcriptor` (opcional para UI; obligatorio para grabar de verdad).
@@ -55,6 +55,10 @@ pre-commit install   # una vez por clone, si vas a crear commits
 2. **Cargar complemento temporal…** y elegí `manifest.json`.
 3. El icono aparece en la barra de herramientas.
 4. La carga temporal se pierde al cerrar Firefox (intencional).
+
+Firefox puede mostrar _“This WebExtension has a temporary ID”_ aunque el **Extension ID** sea `meetings-transcriptor@example.org`. Eso indica instalación temporal (no persistente), no que falte el ID fijo. El UUID interno (`moz-extension://…`) es normal.
+
+Tras cambiar código: en about:debugging pulsá **Reload** en la extensión y volvé a abrir el popup. Si el background figura como _Stopped_, abrí el popup otra vez (el event page MV3 se detiene en idle).
 
 No se instala automáticamente en el perfil.
 

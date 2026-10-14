@@ -46,21 +46,34 @@ function validateManifest(manifest, options = {}) {
         )),
     "host_permissions solo puede incluir Meet si existe"
   );
-  assert(
+
+  const hasScripts =
     manifest.background &&
-      Array.isArray(manifest.background.scripts) &&
-      manifest.background.scripts.length > 0,
-    "Firefox MV3 debe usar background.scripts"
+    Array.isArray(manifest.background.scripts) &&
+    manifest.background.scripts.length > 0;
+  const hasPage =
+    manifest.background && typeof manifest.background.page === "string";
+
+  assert(
+    hasScripts || hasPage,
+    "Firefox MV3 debe usar background.scripts o background.page"
   );
   assert(
     !(manifest.background && manifest.background.service_worker),
     "No usar service_worker como única opción en esta extensión Firefox"
   );
 
-  if (manifest.background && Array.isArray(manifest.background.scripts)) {
+  if (hasScripts) {
     for (const rel of manifest.background.scripts) {
       assert(existsSync(path.join(root, rel)), `Falta script de fondo: ${rel}`);
     }
+  }
+
+  if (hasPage) {
+    assert(
+      existsSync(path.join(root, manifest.background.page)),
+      `Falta background page: ${manifest.background.page}`
+    );
   }
 
   assert(

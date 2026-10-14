@@ -10,14 +10,18 @@ const manifest = JSON.parse(
 );
 
 describe("manifest firefox", () => {
-  it("usa MV3 con ID fijo y background.scripts (no service_worker)", () => {
+  it("usa MV3 con ID fijo y background.page (no service_worker)", () => {
     assert.equal(manifest.manifest_version, 3);
     assert.equal(
       manifest.browser_specific_settings.gecko.id,
       "meetings-transcriptor@example.org"
     );
-    assert.ok(Array.isArray(manifest.background.scripts));
+    assert.equal(typeof manifest.background.page, "string");
     assert.equal(manifest.background.service_worker, undefined);
+    assert.ok(
+      fs.existsSync(path.join(root, manifest.background.page)),
+      manifest.background.page
+    );
   });
 
   it("pide solo permisos mínimos y no APIs Chrome-only implícitas", () => {
@@ -30,10 +34,7 @@ describe("manifest firefox", () => {
     assert.equal("externally_connectable" in manifest, false);
   });
 
-  it("declara scripts existentes y popup", () => {
-    for (const rel of manifest.background.scripts) {
-      assert.ok(fs.existsSync(path.join(root, rel)), rel);
-    }
+  it("declara popup existente", () => {
     assert.ok(fs.existsSync(path.join(root, manifest.action.default_popup)));
   });
 

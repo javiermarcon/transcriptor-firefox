@@ -47,8 +47,15 @@
         : "error";
     }
 
-    async function handleGetStatus() {
-      const tabInfo = meetTab.describeActiveTab(await getActiveTab());
+    async function resolveTabInfo(message) {
+      if (message && message.tab && typeof message.tab === "object") {
+        return meetTab.describeActiveTab(message.tab);
+      }
+      return meetTab.describeActiveTab(await getActiveTab());
+    }
+
+    async function handleGetStatus(message) {
+      const tabInfo = await resolveTabInfo(message);
       try {
         const response = await client.getStatus();
         if (!response.ok) {
@@ -87,8 +94,8 @@
       }
     }
 
-    async function handleStartRecording() {
-      const tabInfo = meetTab.describeActiveTab(await getActiveTab());
+    async function handleStartRecording(message) {
+      const tabInfo = await resolveTabInfo(message);
 
       if (!tabInfo.onMeet) {
         return {
@@ -140,7 +147,7 @@
     }
 
     async function handleStopRecording(message) {
-      const tabInfo = meetTab.describeActiveTab(await getActiveTab());
+      const tabInfo = await resolveTabInfo(message);
       const sessionId = (message && message.sessionId) || lastSessionId || null;
 
       if (!sessionId) {
@@ -197,9 +204,9 @@
 
       switch (message.type) {
         case "GET_STATUS":
-          return handleGetStatus();
+          return handleGetStatus(message);
         case "START_RECORDING":
-          return handleStartRecording();
+          return handleStartRecording(message);
         case "STOP_RECORDING":
           return handleStopRecording(message);
         case "PROTOCOL_INFO":

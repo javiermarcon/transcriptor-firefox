@@ -668,7 +668,20 @@ describe("coverage gaps: validate-manifest", () => {
       /todas las URLs/
     );
 
-    const missingScript = validateManifest(manifest, {
+    const missingPage = validateManifest(manifest, {
+      root,
+      existsSync: (p) => !String(p).includes("background.html"),
+    });
+    assert.equal(missingPage.ok, false);
+
+    const withScripts = Object.assign({}, manifest, {
+      background: {
+        scripts: ["shared/protocol.js", "background/background.js"],
+      },
+    });
+    assert.equal(validateManifest(withScripts, { root }).ok, true);
+
+    const missingScript = validateManifest(withScripts, {
       root,
       existsSync: (p) => !String(p).includes("background.js"),
     });

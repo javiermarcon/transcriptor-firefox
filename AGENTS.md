@@ -13,7 +13,7 @@ Leé este archivo y la documentación enlazada **antes** de modificar código. L
 
 | Módulo                            | Responsabilidad                                                  |
 | --------------------------------- | ---------------------------------------------------------------- |
-| `manifest.json`                   | MV3 Firefox, ID fijo, permisos mínimos, `background.scripts`     |
+| `manifest.json`                   | MV3 Firefox, ID fijo, permisos mínimos, `background.page`        |
 | `shared/protocol.js`              | Contrato versionado request/response                             |
 | `shared/native-client.js`         | Puerto `connectNative`, timeouts, matching por `request_id`      |
 | `shared/meet-tab.js`              | Detección de URL Meet (sin content script)                       |
@@ -89,7 +89,7 @@ El umbral de cobertura CI es **99%** (c8 sobre `shared/` y `scripts/`). No bajes
 2. Implementá la lógica en `shared/` si debe ser testeable sin Firefox.
 3. Cableá UI/background sin mezclar Native Messaging en el popup.
 4. Actualizá `ARCHITECTURE.md` / `SECURITY.md` / `TESTING.md` si cambia el contrato, permisos o flujo.
-5. Mantené permisos mínimos y compatibilidad Firefox (MV3 + `background.scripts`).
+5. Mantené permisos mínimos y compatibilidad Firefox (MV3 + `background.page`).
 6. No implementes análisis de hablantes/visual ni envío remoto en esta fase salvo pedido explícito.
 
 ## Git y operaciones destructivas
