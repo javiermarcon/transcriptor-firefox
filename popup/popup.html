@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Meetings Transcriptor</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="panel">
+      <header class="header">
+        <h1>Meetings Transcriptor</h1>
+        <p class="subtitle">Control local de grabación en Google Meet</p>
+      </header>
+
+      <section class="status-block" aria-live="polite">
+        <div class="row">
+          <span class="label">Pestaña</span>
+          <span id="tab-status" class="value">Comprobando…</span>
+        </div>
+        <div class="row">
+          <span class="label">Reunión</span>
+          <span id="meeting-title" class="value meeting-title">—</span>
+        </div>
+        <div class="row">
+          <span class="label">Transcriptor</span>
+          <span id="transcriptor-status" class="value badge">—</span>
+        </div>
+        <div class="row session-row" id="session-row" hidden>
+          <span class="label">Sesión</span>
+          <span id="session-id" class="value session-id">—</span>
+        </div>
+      </section>
+
+      <p id="error-message" class="error" role="alert" hidden></p>
+
+      <div class="actions">
+        <button id="start-btn" type="button" class="btn btn-primary" disabled>
+          Iniciar grabación
+        </button>
+        <button
+          id="stop-btn"
+          type="button"
+          class="btn btn-danger"
+          disabled
+          hidden
+        >
+          Detener y finalizar
+        </button>
+      </div>
+    </main>
+
+    <script src="../shared/popup-state.js"></script>
+    <script src="../shared/popup-controller.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

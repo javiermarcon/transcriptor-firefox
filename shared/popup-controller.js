@@ -1,0 +1,74 @@
+/**
+ * Transiciones de estado del popup a partir de respuestas del background.
+ */
+/* c8 ignore start */
+(function (root, factory) {
+  const api = factory(root.MeetingsPopupState);
+  if (typeof module === "object" && module.exports) {
+    module.exports = api;
+  }
+  root.MeetingsPopupController = api;
+})(
+  typeof globalThis !== "undefined" ? globalThis : this,
+  function (PopupState) {
+    /* c8 ignore stop */
+    function createInitialState(PopupStateApi) {
+      const api = PopupStateApi || PopupState;
+      return {
+        tab: { onMeet: false, title: "", label: "Fuera de Meet" },
+        transcriptorStatus: api.TRANSCRIPTOR_STATUS.DISCONNECTED,
+        sessionId: null,
+        errorMessage: "",
+        busy: false,
+      };
+    }
+
+    function applyBackgroundResult(current, result, PopupStateApi) {
+      const api = PopupStateApi || PopupState;
+      const next = Object.assign({}, current);
+
+      if (!result || typeof result !== "object") {
+        next.transcriptorStatus = api.TRANSCRIPTOR_STATUS.ERROR;
+        next.errorMessage = "Respuesta inesperada de la extensión.";
+        return next;
+      }
+
+      if (result.tab) {
+        next.tab = result.tab;
+      }
+
+      if (result.transcriptorStatus) {
+        next.transcriptorStatus = result.transcriptorStatus;
+      }
+
+      next.sessionId =
+        typeof result.sessionId === "string" ? result.sessionId : null;
+
+      if (result.ok) {
+        next.errorMessage = "";
+      } else if (result.error && result.error.message) {
+        next.errorMessage = result.error.message;
+        if (
+          result.transcriptorStatus === api.TRANSCRIPTOR_STATUS.DISCONNECTED ||
+          (result.error.code && String(result.error.code).includes("HOST_"))
+        ) {
+          next.transcriptorStatus =
+            result.transcriptorStatus || api.TRANSCRIPTOR_STATUS.DISCONNECTED;
+        } else {
+          next.transcriptorStatus =
+            result.transcriptorStatus || api.TRANSCRIPTOR_STATUS.ERROR;
+        }
+      } else {
+        next.errorMessage = "Ocurrió un error al hablar con el host local.";
+        next.transcriptorStatus = api.TRANSCRIPTOR_STATUS.ERROR;
+      }
+
+      return next;
+    }
+
+    return {
+      createInitialState,
+      applyBackgroundResult,
+    };
+  }
+);

@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Meetings Transcriptor",
+  "version": "0.1.0",
+  "description": "Controla el transcriptor local de reuniones desde Google Meet.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "meetings-transcriptor@example.org",
+      "strict_min_version": "121.0"
+    }
+  },
+  "icons": {
+    "48": "icons/icon-48.png",
+    "96": "icons/icon-96.png"
+  },
+  "action": {
+    "default_title": "Meetings Transcriptor",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "48": "icons/icon-48.png",
+      "96": "icons/icon-96.png"
+    }
+  },
+  "background": {
+    "scripts": [
+      "shared/protocol.js",
+      "shared/native-client.js",
+      "shared/meet-tab.js",
+      "shared/background-controller.js",
+      "background/background.js"
+    ]
+  },
+  "permissions": ["nativeMessaging", "activeTab"]
+}

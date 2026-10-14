@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Meetings Transcriptor">
+  <rect width="96" height="96" rx="18" fill="#e8f1f5"/>
+  <circle cx="48" cy="48" r="28" fill="#1a5f7a"/>
+  <rect x="42" y="28" width="12" height="34" rx="6" fill="#e8f1f5"/>
+  <rect x="30" y="30" width="36" height="10" rx="5" fill="#e8f1f5"/>
+</svg>

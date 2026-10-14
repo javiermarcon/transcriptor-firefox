@@ -1,0 +1,46 @@
+# Hooks locales reproducibles. Requiere: npm install && pre-commit install
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '^(icons/.*|package-lock\.json)$'
+      - id: end-of-file-fixer
+        exclude: '^(icons/.*|package-lock\.json)$'
+      - id: check-json
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ["--maxkb=512"]
+      - id: check-merge-conflict
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+
+  - repo: local
+    hooks:
+      - id: npm-format-check
+        name: prettier format check
+        entry: npm run format:check
+        language: system
+        pass_filenames: false
+        files: '\.(js|json|html|css|md|ya?ml)$'
+
+      - id: npm-lint
+        name: eslint
+        entry: npm run lint
+        language: system
+        pass_filenames: false
+        files: '\.js$'
+
+      - id: validate-manifest
+        name: validate firefox manifest
+        entry: npm run validate:manifest
+        language: system
+        pass_filenames: false
+        files: '(^manifest\.json$|^scripts/validate-manifest\.js$)'
+
+      - id: npm-test-coverage
+        name: npm test with 99% coverage
+        entry: npm run test:coverage
+        language: system
+        pass_filenames: false
+        files: '\.(js|json)$'

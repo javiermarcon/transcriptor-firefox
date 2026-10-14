@@ -1,0 +1,87 @@
+/**
+ * Estado de la UI del popup: qué mostrar y qué acciones habilitar.
+ */
+/* c8 ignore start */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) {
+    module.exports = api;
+  }
+  root.MeetingsPopupState = api;
+})(typeof globalThis !== "undefined" ? globalThis : this, function () {
+  /* c8 ignore stop */
+  const TRANSCRIPTOR_STATUS = Object.freeze({
+    DISCONNECTED: "disconnected",
+    READY: "ready",
+    RECORDING: "recording",
+    ERROR: "error",
+  });
+
+  const STATUS_LABELS = Object.freeze({
+    disconnected: "Desconectado",
+    ready: "Listo",
+    recording: "Grabando",
+    error: "Error",
+  });
+
+  function derivePopupView(input) {
+    const tab = input.tab || {
+      onMeet: false,
+      title: "",
+      label: "Fuera de Meet",
+    };
+    const busy = Boolean(input.busy);
+    const sessionId =
+      typeof input.sessionId === "string" && input.sessionId.trim()
+        ? input.sessionId.trim()
+        : null;
+    const errorMessage =
+      typeof input.errorMessage === "string" && input.errorMessage.trim()
+        ? input.errorMessage.trim()
+        : "";
+
+    let transcriptorStatus = input.transcriptorStatus;
+    if (!Object.values(TRANSCRIPTOR_STATUS).includes(transcriptorStatus)) {
+      transcriptorStatus = errorMessage
+        ? TRANSCRIPTOR_STATUS.ERROR
+        : TRANSCRIPTOR_STATUS.DISCONNECTED;
+    }
+
+    const canStart =
+      !busy &&
+      tab.onMeet &&
+      transcriptorStatus === TRANSCRIPTOR_STATUS.READY &&
+      !sessionId;
+
+    const canStop =
+      !busy &&
+      transcriptorStatus === TRANSCRIPTOR_STATUS.RECORDING &&
+      Boolean(sessionId);
+
+    return {
+      tabLabel: tab.label || (tab.onMeet ? "Google Meet" : "Fuera de Meet"),
+      meetingTitle: tab.onMeet ? tab.title || "Reunión de Google Meet" : "—",
+      transcriptorStatus,
+      /* c8 ignore next 2 */
+      transcriptorLabel:
+        STATUS_LABELS[transcriptorStatus] || STATUS_LABELS.error,
+      sessionId,
+      errorMessage,
+      canStart,
+      canStop,
+      busy,
+      startDisabled: !canStart,
+      stopDisabled: !canStop,
+      startVisible: true,
+      stopVisible:
+        transcriptorStatus === TRANSCRIPTOR_STATUS.RECORDING ||
+        Boolean(sessionId),
+    };
+  }
+
+  return {
+    TRANSCRIPTOR_STATUS,
+    STATUS_LABELS,
+    derivePopupView,
+  };
+});

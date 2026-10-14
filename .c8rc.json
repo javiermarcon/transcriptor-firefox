@@ -1,0 +1,11 @@
+{
+  "all": true,
+  "include": ["shared/**/*.js", "scripts/**/*.js"],
+  "exclude": ["tests/**", "node_modules/**", "coverage/**"],
+  "reporter": ["text", "text-summary"],
+  "check-coverage": true,
+  "lines": 99,
+  "functions": 99,
+  "branches": 99,
+  "statements": 99
+}

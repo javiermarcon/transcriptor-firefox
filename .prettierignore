@@ -1,0 +1,7 @@
+node_modules
+package-lock.json
+web-ext-artifacts
+coverage
+*.png
+*.xpi
+.git
