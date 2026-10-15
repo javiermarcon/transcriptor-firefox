@@ -8,12 +8,31 @@
     transcriptorStatus: document.getElementById("transcriptor-status"),
     sessionRow: document.getElementById("session-row"),
     sessionId: document.getElementById("session-id"),
+    observationStatus: document.getElementById("observation-status"),
     errorMessage: document.getElementById("error-message"),
+    observationError: document.getElementById("observation-error"),
     startBtn: document.getElementById("start-btn"),
     stopBtn: document.getElementById("stop-btn"),
+    diagnosticToggle: document.getElementById("diagnostic-toggle"),
+    diagnosticPanel: document.getElementById("diagnostic-panel"),
+    diagnosticEvents: document.getElementById("diagnostic-events"),
+    refreshDiagBtn: document.getElementById("refresh-diag-btn"),
   };
 
   let current = createInitialState();
+
+  function formatEvents(events) {
+    if (!events || !events.length) {
+      return "Sin eventos.";
+    }
+    return events
+      .slice(-12)
+      .map((event) => {
+        const name = event.display_name || "—";
+        return `${event.timestamp_epoch_ms} ${event.event_type} ${name} (${event.source}, c=${event.confidence})`;
+      })
+      .join("\n");
+  }
 
   function render() {
     const view = derivePopupView(current);
@@ -22,6 +41,7 @@
     els.meetingTitle.textContent = view.meetingTitle;
     els.transcriptorStatus.textContent = view.transcriptorLabel;
     els.transcriptorStatus.dataset.status = view.transcriptorStatus;
+    els.observationStatus.textContent = view.observationLabel;
 
     if (view.sessionId) {
       els.sessionRow.hidden = false;
@@ -39,6 +59,14 @@
       els.errorMessage.textContent = "";
     }
 
+    if (view.observationError) {
+      els.observationError.hidden = false;
+      els.observationError.textContent = view.observationError;
+    } else {
+      els.observationError.hidden = true;
+      els.observationError.textContent = "";
+    }
+
     els.startBtn.disabled = view.startDisabled;
     els.stopBtn.disabled = view.stopDisabled;
     els.stopBtn.hidden = !view.stopVisible;
@@ -46,6 +74,10 @@
     els.stopBtn.textContent = view.busy
       ? "Finalizando…"
       : "Detener y finalizar";
+
+    els.diagnosticToggle.checked = view.diagnosticEnabled;
+    els.diagnosticPanel.hidden = !view.diagnosticVisible;
+    els.diagnosticEvents.textContent = formatEvents(current.recentEvents);
   }
 
   function isConnectionError(err) {
@@ -74,7 +106,6 @@
       if (!isConnectionError(err)) {
         throw err;
       }
-      // Carrera conocida en Firefox MV3: el primer mensaje despierta el event page.
       await wakeBackground();
       await new Promise((resolve) => setTimeout(resolve, 50));
       return browser.runtime.sendMessage(message);
@@ -129,6 +160,25 @@
     }
   }
 
+  async function refreshDiagnostics() {
+    try {
+      const result = await sendToBackground({ type: "GET_DIAGNOSTICS" });
+      if (result && result.ok) {
+        current = Object.assign({}, current, {
+          diagnosticEnabled: Boolean(result.diagnosticEnabled),
+          observationActive: Boolean(result.observationActive),
+          observationError: result.observationError || "",
+          recentEvents: Array.isArray(result.recentEvents)
+            ? result.recentEvents
+            : [],
+        });
+        render();
+      }
+    } catch (_err) {
+      // Silencioso: el diagnóstico es opcional.
+    }
+  }
+
   els.startBtn.addEventListener("click", () => {
     if (els.startBtn.disabled) {
       return;
@@ -141,6 +191,27 @@
       return;
     }
     send("STOP_RECORDING", { sessionId: current.sessionId });
+  });
+
+  els.diagnosticToggle.addEventListener("change", async () => {
+    const enabled = els.diagnosticToggle.checked;
+    try {
+      await sendToBackground({ type: "SET_DIAGNOSTIC", enabled });
+      current = Object.assign({}, current, {
+        diagnosticEnabled: enabled,
+        recentEvents: enabled ? current.recentEvents : [],
+      });
+      render();
+      if (enabled) {
+        await refreshDiagnostics();
+      }
+    } catch (_err) {
+      els.diagnosticToggle.checked = current.diagnosticEnabled;
+    }
+  });
+
+  els.refreshDiagBtn.addEventListener("click", () => {
+    refreshDiagnostics();
   });
 
   render();

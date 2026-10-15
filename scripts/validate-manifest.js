@@ -83,6 +83,24 @@ function validateManifest(manifest, options = {}) {
     "Falta popup HTML"
   );
 
+  if (Array.isArray(manifest.content_scripts)) {
+    for (const entry of manifest.content_scripts) {
+      assert(
+        Array.isArray(entry.matches) &&
+          entry.matches.every((m) => m.startsWith("https://meet.google.com/")),
+        "content_scripts solo puede aplicarse a Meet"
+      );
+      if (Array.isArray(entry.js)) {
+        for (const rel of entry.js) {
+          assert(
+            existsSync(path.join(root, rel)),
+            `Falta content script: ${rel}`
+          );
+        }
+      }
+    }
+  }
+
   return { ok: errors.length === 0, errors };
 }
 

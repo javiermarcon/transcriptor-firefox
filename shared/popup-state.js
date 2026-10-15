@@ -58,6 +58,13 @@
       transcriptorStatus === TRANSCRIPTOR_STATUS.RECORDING &&
       Boolean(sessionId);
 
+    const observationActive = Boolean(input.observationActive);
+    const diagnosticEnabled = Boolean(input.diagnosticEnabled);
+    const observationError =
+      typeof input.observationError === "string"
+        ? input.observationError.trim()
+        : "";
+
     return {
       tabLabel: tab.label || (tab.onMeet ? "Google Meet" : "Fuera de Meet"),
       meetingTitle: tab.onMeet ? tab.title || "Reunión de Google Meet" : "—",
@@ -76,6 +83,11 @@
       stopVisible:
         transcriptorStatus === TRANSCRIPTOR_STATUS.RECORDING ||
         Boolean(sessionId),
+      observationActive,
+      observationLabel: observationActive ? "Observando Meet" : "Inactiva",
+      diagnosticEnabled,
+      observationError,
+      diagnosticVisible: diagnosticEnabled,
     };
   }
 

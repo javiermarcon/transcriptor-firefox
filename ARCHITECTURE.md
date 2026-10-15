@@ -1,6 +1,6 @@
 # Arquitectura
 
-Documento de la arquitectura **efectiva** de la extensión v0.1.0.
+Documento de la arquitectura **efectiva** de la extensión v0.2.0.
 
 ## Vista general
 
@@ -9,124 +9,69 @@ flowchart LR
   User[Usuario] --> Popup[popup HTML/JS]
   Popup -->|runtime.sendMessage| BG[background event page]
   BG --> Ctrl[background-controller]
-  Ctrl --> Tab[meet-tab + tabs.query]
   Ctrl --> Client[native-client]
   Client -->|connectNative| Host[Host local com.meetings.transcriptor]
-  Host -.->|fuera de este repo| Py[Transcriptor Python / FFmpeg]
+  BG -->|tabs.sendMessage| CS[content script Meet]
+  CS --> Obs[meet-observation]
+  Obs --> DOM[DOM visible Meet]
+  CS -->|MEET_EVENT| BG
+  BG -->|record_meet_event| Host
 ```
 
 ## Manifest y permisos
 
 - Manifest V3.
 - ID fijo: `meetings-transcriptor@example.org`.
-- `strict_min_version`: Firefox 121.
-- Background: `background.page` → `background/background.html` (event page Firefox). **No** se usa `service_worker`.
+- Background: `background.page` → `background/background.html`.
 - Permisos: `nativeMessaging`, `activeTab`.
-- Sin `host_permissions`, sin content scripts, sin `optional_permissions`.
+- `host_permissions`: solo `https://meet.google.com/*`.
+- Content scripts solo en Meet (cargan idle; observan únicamente tras `START_MEET_OBSERVATION`).
 
-## Popup e interfaz
+## Popup
 
 Archivos: `popup/popup.html`, `popup/popup.css`, `popup/popup.js`.
 
-Al abrir:
-
-1. Estado inicial vía `createInitialState()` → desconectado.
-2. `GET_STATUS` al background.
-3. `applyBackgroundResult` + `derivePopupView` actualizan labels y botones.
-
-La UI **no** habla con Native Messaging directamente.
+- Control start/stop + estado.
+- Modo diagnóstico en memoria (últimos eventos).
 
 ## Background
 
-`background/background.js` solo:
+- Native Messaging privilegiado.
+- Al confirmar start: notifica al content script.
+- Al stop (o host ya no recording): detiene observación.
+- Reenvía `MEET_EVENT` validados como `record_meet_event`.
 
-- crea el `NativeClient` real (`browser.runtime.connectNative`);
-- obtiene la pestaña activa con `browser.tabs.query`;
-- delega en `shared/background-controller.js`;
-- escucha `browser.runtime.onMessage`.
+## Content script
 
-## Content scripts
+Scripts en `shared/meet-*.js` + `content/content.js`.
 
-No existen en esta versión. La detección Meet es por URL de la pestaña activa.
+- Polling ~2 s + MutationObserver acotado a la lista de participantes si existe.
+- No observa el `document` completo sin límites.
+- Emite eventos tipados; no inventa nombres.
 
-## Cliente Native Messaging
+## Módulos compartidos clave
 
-`shared/native-client.js`:
+| Módulo                                              | Rol                               |
+| --------------------------------------------------- | --------------------------------- |
+| `meet-event-schema.js`                              | Contrato de evento                |
+| `meet-dom-snapshot.js`                              | Extracción heurística del DOM     |
+| `meet-participant-diff.js` / `meet-speaker-diff.js` | Diffs                             |
+| `meet-observation.js`                               | Lifecycle + rate limit            |
+| `protocol.js` / `native-client.js`                  | NM incluyendo `record_meet_event` |
 
-- Conexión perezosa al host `com.meetings.transcriptor`.
-- Solicitudes con `request_id` único.
-- Timeout configurable (default 10s).
-- Ignora mensajes sin pending matching.
-- Rechaza start exitoso sin `session_id`.
-- Propaga desconexiones a promesas pendientes.
+## Contrato interno (popup/content → background)
 
-`shared/protocol.js` define el contrato v1 (`get_status`, `start_recording`, `stop_recording`).
+| `type`                                              | Efecto                                |
+| --------------------------------------------------- | ------------------------------------- |
+| `GET_STATUS` / `START_RECORDING` / `STOP_RECORDING` | Igual que v0.1 + flags de observación |
+| `MEET_EVENT`                                        | Content → background → host           |
+| `SET_DIAGNOSTIC` / `GET_DIAGNOSTICS`                | Buffer en memoria                     |
+| `START_MEET_OBSERVATION` / `STOP_MEET_OBSERVATION`  | Background → content                  |
 
-## Contrato de mensajes extensión interna
-
-Popup → Background:
-
-| `type`            | Efecto                                        |
-| ----------------- | --------------------------------------------- |
-| `GET_STATUS`      | Consulta host + describe pestaña              |
-| `START_RECORDING` | Solo si pestaña Meet; envía url/title al host |
-| `STOP_RECORDING`  | Envía `session_id` al host                    |
-| `PROTOCOL_INFO`   | Metadatos de protocolo (diagnóstico)          |
-
-Respuesta típica al popup:
-
-```json
-{
-  "ok": true,
-  "tab": {
-    "onMeet": true,
-    "url": "...",
-    "title": "...",
-    "label": "Google Meet"
-  },
-  "transcriptorStatus": "ready",
-  "sessionId": null
-}
-```
-
-Errores: `ok: false` + `error: { code, message }` y un `transcriptorStatus` de `disconnected` o `error`.
-
-## Flujo de inicio y detención
-
-```mermaid
-sequenceDiagram
-  participant U as Usuario
-  participant P as Popup
-  participant B as Background
-  participant H as Host nativo
-
-  U->>P: Abrir popup
-  P->>B: GET_STATUS
-  B->>H: get_status
-  H-->>B: ok + status
-  B-->>P: ready/disconnected/error
-
-  U->>P: Iniciar
-  P->>B: START_RECORDING
-  B->>B: ¿URL Meet?
-  B->>H: start_recording url/title
-  alt host confirma session_id
-    H-->>B: ok + session_id
-    B-->>P: recording + sessionId
-  else fallo o sin session_id
-    H-->>B: error / data incompleta
-    B-->>P: error (no recording)
-  end
-
-  U->>P: Detener
-  P->>B: STOP_RECORDING sessionId
-  B->>H: stop_recording
-  H-->>B: ok
-  B-->>P: ready
-```
+Detalle de eventos y fiabilidad: [`docs/MEET_EVENTS.md`](./docs/MEET_EVENTS.md).
 
 ## Límites con el transcriptor local
 
 - Este repo no inicia FFmpeg ni escribe WAV/MP4.
-- Si el host no está registrado, la extensión permanece usable como UI de diagnóstico (estado desconectado + mensaje).
-- La integración real de grabación queda validada solo cuando existe un host conforme al protocolo; hasta entonces no se debe afirmar grabación real end-to-end.
+- La persistencia de eventos Meet la hará el host al implementar `record_meet_event`.
+- No hay asociación automática con WhisperX en esta versión.

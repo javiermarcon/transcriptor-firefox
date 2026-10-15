@@ -233,6 +233,14 @@
       });
     }
 
+    function recordMeetEvent(event, requestOptions) {
+      return request(
+        protocol.ACTIONS.RECORD_MEET_EVENT,
+        event && typeof event === "object" ? event : {},
+        Object.assign({ timeoutMs: 5000 }, requestOptions || {})
+      );
+    }
+
     function disconnect() {
       rejectAll(
         Object.assign(new Error(protocol.ERROR_MESSAGES.HOST_DISCONNECTED), {
@@ -254,6 +262,7 @@
       getStatus,
       startRecording,
       stopRecording,
+      recordMeetEvent,
       disconnect,
       _pending: pending,
     };

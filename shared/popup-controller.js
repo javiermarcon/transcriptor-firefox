@@ -20,6 +20,10 @@
         sessionId: null,
         errorMessage: "",
         busy: false,
+        observationActive: false,
+        diagnosticEnabled: false,
+        observationError: "",
+        recentEvents: [],
       };
     }
 
@@ -43,6 +47,19 @@
 
       next.sessionId =
         typeof result.sessionId === "string" ? result.sessionId : null;
+
+      if (typeof result.observationActive === "boolean") {
+        next.observationActive = result.observationActive;
+      }
+      if (typeof result.diagnosticEnabled === "boolean") {
+        next.diagnosticEnabled = result.diagnosticEnabled;
+      }
+      if (typeof result.observationError === "string") {
+        next.observationError = result.observationError;
+      }
+      if (Array.isArray(result.recentEvents)) {
+        next.recentEvents = result.recentEvents;
+      }
 
       if (result.ok) {
         next.errorMessage = "";

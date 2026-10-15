@@ -29,9 +29,15 @@ describe("manifest firefox", () => {
       "activeTab",
       "nativeMessaging",
     ]);
-    assert.equal(manifest.host_permissions, undefined);
+    assert.deepEqual(manifest.host_permissions, ["https://meet.google.com/*"]);
     assert.equal(manifest.permissions.includes("<all_urls>"), false);
     assert.equal("externally_connectable" in manifest, false);
+    assert.ok(Array.isArray(manifest.content_scripts));
+    assert.ok(
+      manifest.content_scripts[0].matches.every((m) =>
+        m.startsWith("https://meet.google.com/")
+      )
+    );
   });
 
   it("declara popup existente", () => {

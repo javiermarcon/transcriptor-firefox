@@ -11,20 +11,17 @@ Leé este archivo y la documentación enlazada **antes** de modificar código. L
 
 ## Arquitectura y responsabilidades
 
-| Módulo                            | Responsabilidad                                                  |
-| --------------------------------- | ---------------------------------------------------------------- |
-| `manifest.json`                   | MV3 Firefox, ID fijo, permisos mínimos, `background.page`        |
-| `shared/protocol.js`              | Contrato versionado request/response                             |
-| `shared/native-client.js`         | Puerto `connectNative`, timeouts, matching por `request_id`      |
-| `shared/meet-tab.js`              | Detección de URL Meet (sin content script)                       |
-| `shared/popup-state.js`           | Derivación de labels y botones habilitados                       |
-| `shared/popup-controller.js`      | Transiciones de estado del popup desde respuestas del background |
-| `shared/background-controller.js` | Orquestación get/start/stop testeable                            |
-| `background/background.js`        | Cableado privilegiado a `browser.*` + cliente nativo             |
-| `popup/*`                         | UI; habla con el background vía `runtime.sendMessage`            |
-| `scripts/validate-manifest.js`    | Comprobaciones estáticas del manifest                            |
+| Módulo                                    | Responsabilidad                                                    |
+| ----------------------------------------- | ------------------------------------------------------------------ |
+| `manifest.json`                           | MV3 Firefox, ID fijo, `background.page`, content scripts solo Meet |
+| `shared/protocol.js` / `native-client.js` | NM incluyendo `record_meet_event`                                  |
+| `shared/meet-*.js`                        | Detección/diff/observación de metadatos Meet (testeable)           |
+| `shared/background-controller.js`         | Start/stop + bridge de eventos Meet                                |
+| `content/content.js`                      | Observa solo tras `START_MEET_OBSERVATION`                         |
+| `popup/*`                                 | UI + modo diagnóstico en memoria                                   |
+| `docs/MEET_EVENTS.md`                     | Contrato y fiabilidad de detecciones                               |
 
-No hay content scripts en esta versión. No uses APIs `chrome.*`; usá `browser.*`.
+No uses APIs `chrome.*`; usá `browser.*`. No asumas selectores estables de Meet.
 
 ## Límites extensión ↔ transcriptor Python
 
@@ -47,7 +44,9 @@ No hay content scripts en esta versión. No uses APIs `chrome.*`; usá `browser.
 - Host fijo: `com.meetings.transcriptor`.
 - Validar `protocol_version`, `request_id`, forma de `ok`/`error`/`data`.
 - Rechazar acciones desconocidas; no interpolar input en shells.
+- `host_permissions` solo para `https://meet.google.com/*`.
 - No ampliar permisos a `<all_urls>` ni host permissions globales sin justificación fuerte.
+- No asociar automáticamente hablantes visuales con WhisperX en esta fase.
 
 ## Permisos Firefox y Meet
 

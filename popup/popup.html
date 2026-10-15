@@ -30,9 +30,14 @@
           <span class="label">Sesión</span>
           <span id="session-id" class="value session-id">—</span>
         </div>
+        <div class="row">
+          <span class="label">Metadatos</span>
+          <span id="observation-status" class="value">Inactiva</span>
+        </div>
       </section>
 
       <p id="error-message" class="error" role="alert" hidden></p>
+      <p id="observation-error" class="warn" hidden></p>
 
       <div class="actions">
         <button id="start-btn" type="button" class="btn btn-primary" disabled>
@@ -48,6 +53,19 @@
           Detener y finalizar
         </button>
       </div>
+
+      <label class="diagnostic-toggle">
+        <input id="diagnostic-toggle" type="checkbox" />
+        Modo diagnóstico (solo en memoria)
+      </label>
+
+      <section id="diagnostic-panel" class="diagnostic-panel" hidden>
+        <h2>Eventos recientes</h2>
+        <pre id="diagnostic-events" class="diagnostic-events">Sin eventos.</pre>
+        <button id="refresh-diag-btn" type="button" class="btn btn-secondary">
+          Actualizar diagnóstico
+        </button>
+      </section>
     </main>
 
     <script src="../shared/popup-state.js"></script>

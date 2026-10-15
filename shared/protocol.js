@@ -17,6 +17,7 @@
     GET_STATUS: "get_status",
     START_RECORDING: "start_recording",
     STOP_RECORDING: "stop_recording",
+    RECORD_MEET_EVENT: "record_meet_event",
   });
 
   const ERROR_MESSAGES = Object.freeze({

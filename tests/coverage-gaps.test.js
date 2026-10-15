@@ -160,6 +160,24 @@ describe("coverage gaps: popup-state/controller", () => {
   });
 
   it("aplica error sin mensaje y HOST_ sin status explícito", () => {
+    const withObservation = applyBackgroundResult(createInitialState(), {
+      ok: true,
+      observationActive: true,
+      diagnosticEnabled: true,
+      observationError: "parcial",
+      recentEvents: [{ event_type: "participant_joined" }],
+      sessionId: "s1",
+      transcriptorStatus: "recording",
+    });
+    assert.equal(withObservation.observationActive, true);
+    assert.equal(withObservation.diagnosticEnabled, true);
+    assert.equal(withObservation.observationError, "parcial");
+    assert.equal(withObservation.recentEvents.length, 1);
+    assert.equal(
+      derivePopupView(withObservation).observationLabel,
+      "Observando Meet"
+    );
+
     const noMessage = applyBackgroundResult(createInitialState(), {
       ok: false,
       tab: {

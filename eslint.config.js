@@ -35,6 +35,7 @@ module.exports = [
       "popup/**/*.js",
       "shared/**/*.js",
       "scripts/**/*.js",
+      "content/**/*.js",
     ],
     languageOptions: {
       globals: {
@@ -46,6 +47,11 @@ module.exports = [
         MeetingsPopupState: "readonly",
         MeetingsPopupController: "readonly",
         MeetingsBackgroundController: "readonly",
+        MeetingsMeetEventSchema: "readonly",
+        MeetingsMeetParticipantDiff: "readonly",
+        MeetingsMeetSpeakerDiff: "readonly",
+        MeetingsMeetDomSnapshot: "readonly",
+        MeetingsMeetObservation: "readonly",
       },
     },
   },

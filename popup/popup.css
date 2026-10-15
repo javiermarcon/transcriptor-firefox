@@ -160,3 +160,52 @@ body {
 .btn:not(:disabled):hover {
   filter: brightness(1.05);
 }
+
+.btn-secondary {
+  background: #d9e6ec;
+  color: var(--ink);
+}
+
+.warn {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff6df;
+  color: #7a5a00;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.diagnostic-toggle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.diagnostic-panel {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.diagnostic-panel h2 {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+}
+
+.diagnostic-events {
+  margin: 0 0 10px;
+  max-height: 160px;
+  overflow: auto;
+  padding: 8px;
+  border-radius: 8px;
+  background: #f0f5f7;
+  font-size: 0.72rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

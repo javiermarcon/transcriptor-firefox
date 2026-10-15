@@ -12,26 +12,29 @@ La extensión permite:
 - Detectar si la pestaña activa es `https://meet.google.com/…`.
 - Consultar el estado del host local `com.meetings.transcriptor`.
 - Pedir al host iniciar o detener una grabación con acción explícita del usuario.
+- Durante una grabación, observar metadatos visibles de participantes/hablante en Meet y enviarlos al host con `record_meet_event`.
 - Mostrar errores claros si el host no está instalado, no responde o rechaza la operación.
 
 La extensión **no**:
 
 - Ejecuta FFmpeg ni lógica de transcripción.
-- Incluye content scripts ni análisis de hablantes/visual.
+- Asocia automáticamente hablantes visuales con segmentos de WhisperX.
 - Envía audio, video o datos a servicios remotos.
 - Instala el host nativo por sí misma.
 
 ## Estado real de implementación
 
-| Capacidad                                   | Estado                                                                  |
-| ------------------------------------------- | ----------------------------------------------------------------------- |
-| Popup + estados de UI                       | Implementado                                                            |
-| Detección de pestaña Meet por URL           | Implementado                                                            |
-| Cliente Native Messaging + protocolo v1     | Implementado en la extensión                                            |
-| Evitar “Grabando” sin `session_id` del host | Implementado                                                            |
-| Suite unitaria, lint, format, pre-commit    | Implementado                                                            |
-| Host nativo real / grabación end-to-end     | **Fuera de este repo**; requiere host instalado y conforme al protocolo |
-| Prueba manual en reunión Meet real          | Pendiente (ver `TESTING.md`)                                            |
+| Capacidad                                    | Estado                                               |
+| -------------------------------------------- | ---------------------------------------------------- |
+| Popup + estados de UI                        | Implementado                                         |
+| Detección de pestaña Meet por URL            | Implementado                                         |
+| Cliente Native Messaging + protocolo v1      | Implementado en la extensión                         |
+| Evitar “Grabando” sin `session_id` del host  | Implementado                                         |
+| Metadatos de participantes / hablante visual | Implementado (heurístico; ver `docs/MEET_EVENTS.md`) |
+| Persistencia de eventos en el host           | Pendiente en el host (`record_meet_event`)           |
+| Suite unitaria, lint, format, pre-commit     | Implementado                                         |
+| Host nativo real / grabación end-to-end      | **Fuera de este repo**                               |
+| Prueba manual en reunión Meet real           | Pendiente (ver `TESTING.md`)                         |
 
 Hasta validar un host real, no se debe asumir que una grabación de reunión completa funciona solo porque la UI está lista.
 
@@ -103,7 +106,8 @@ Debe incluir `meetings-transcriptor@example.org` en `allowed_extensions`.
 - Sin observación en vivo de cambio de pestaña mientras el popup permanece abierto.
 - Sin host empaquetado en este repositorio.
 - Grabación real no verificada end-to-end en CI.
-- Sin análisis de hablantes ni análisis visual.
+- Los selectores DOM de Meet son inestables; las detecciones llevan `confidence`/`quality`.
+- Ver a alguien en la lista no demuestra que pronunció una frase concreta.
 
 ## Documentación
 
@@ -112,6 +116,7 @@ Debe incluir `meetings-transcriptor@example.org` en `allowed_extensions`.
 - [`SECURITY.md`](./SECURITY.md) — modelo de seguridad
 - [`TESTING.md`](./TESTING.md) — pruebas y calidad
 - [`CONTRIBUTING.md`](./CONTRIBUTING.md) — flujo de contribución
+- [`docs/MEET_EVENTS.md`](./docs/MEET_EVENTS.md) — eventos Meet, contrato `record_meet_event` y fiabilidad
 
 ## Estructura
 

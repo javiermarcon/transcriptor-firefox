@@ -15,7 +15,8 @@
       if (
         typeof MeetingsNativeClient === "undefined" ||
         typeof MeetingsBackgroundController === "undefined" ||
-        typeof MeetingsProtocol === "undefined"
+        typeof MeetingsProtocol === "undefined" ||
+        typeof MeetingsMeetEventSchema === "undefined"
       ) {
         throw new Error(
           "No se cargaron los módulos compartidos del background."
@@ -28,12 +29,16 @@
       controller = createBackgroundController({
         client: createNativeClient(),
         protocol: MeetingsProtocol,
+        eventSchema: MeetingsMeetEventSchema,
         async getActiveTab() {
           const tabs = await browser.tabs.query({
             active: true,
             currentWindow: true,
           });
           return tabs[0] || null;
+        },
+        async notifyMeetTab(tabId, message) {
+          return browser.tabs.sendMessage(tabId, message);
         },
       });
     } catch (err) {

@@ -68,12 +68,14 @@ node --test tests/coverage-gaps.test.js
 - Derivación de estado del popup y prevención de “Grabando” ficticio.
 - Orquestación background (start/stop/get) con cliente falso.
 - Invariantes del manifest y ausencia de dependencia `chrome.*`.
+- Diffs de participantes/hablante y lifecycle de observación (`tests/meet-events.test.js` + fixtures HTML).
 
 ### Integración local (manual o semi-manual)
 
 - Cargar la extensión temporalmente en Firefox.
 - Abrir el popup con y sin host registrado.
 - Verificar mensajes en español cuando el host no existe.
+- Con diagnóstico activo, ver eventos detectados durante una grabación (el host puede aún no persistirlos).
 
 ### Manual pendiente (reunión real)
 
@@ -120,10 +122,11 @@ Estas **no** forman parte de `npm test`:
 
 1. Entrar a una reunión Meet real con el host nativo instalado y operativo.
 2. Iniciar grabación desde el popup y confirmar archivos de sesión en el lado del host.
-3. Detener y verificar cierre limpio de la sesión.
-4. Comprobar el título mostrado cuando Meet cambia el `document.title`.
-5. Cambiar de pestaña con el popup cerrado/reabierto (hoy el popup no observa cambios en vivo mientras está abierto).
-6. Validar comportamiento si el host se cae a mitad de una grabación.
+3. Activar modo diagnóstico y contrastar nombres detectados con la UI de Meet.
+4. Abrir/cerrar el panel de participantes y ver joins/leaves heurísticos.
+5. Detener y verificar que cesa la observación (`Metadatos: Inactiva`) y que no siguen saliendo eventos.
+6. Cuando el host implemente `record_meet_event`, verificar persistencia local de la secuencia.
+7. Validar comportamiento si el host se cae a mitad de una grabación.
 
 ## pre-commit
 
