@@ -9,6 +9,8 @@
     sessionRow: document.getElementById("session-row"),
     sessionId: document.getElementById("session-id"),
     observationStatus: document.getElementById("observation-status"),
+    profileSelect: document.getElementById("profile-select"),
+    profileHint: document.getElementById("profile-hint"),
     errorMessage: document.getElementById("error-message"),
     observationError: document.getElementById("observation-error"),
     startBtn: document.getElementById("start-btn"),
@@ -20,6 +22,7 @@
   };
 
   let current = createInitialState();
+  let syncingProfileSelect = false;
 
   function formatEvents(events) {
     if (!events || !events.length) {
@@ -32,6 +35,53 @@
         return `${event.timestamp_epoch_ms} ${event.event_type} ${name} (${event.source}, c=${event.confidence})`;
       })
       .join("\n");
+  }
+
+  function syncProfileSelect(view) {
+    syncingProfileSelect = true;
+    try {
+      const select = els.profileSelect;
+      select.innerHTML = "";
+
+      if (!view.profilesSupported) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "Perfil del host (por defecto)";
+        select.appendChild(option);
+        select.value = "";
+        select.disabled = true;
+      } else if (!view.profiles.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "Sin perfiles";
+        select.appendChild(option);
+        select.value = "";
+        select.disabled = true;
+      } else {
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = "Elegí un perfil…";
+        select.appendChild(placeholder);
+        for (const name of view.profiles) {
+          const option = document.createElement("option");
+          option.value = name;
+          option.textContent = name;
+          select.appendChild(option);
+        }
+        select.value = view.selectedProfile || "";
+        select.disabled = !view.profileSelectEnabled;
+      }
+
+      if (view.profileHint) {
+        els.profileHint.hidden = false;
+        els.profileHint.textContent = view.profileHint;
+      } else {
+        els.profileHint.hidden = true;
+        els.profileHint.textContent = "";
+      }
+    } finally {
+      syncingProfileSelect = false;
+    }
   }
 
   function render() {
@@ -78,6 +128,7 @@
     els.diagnosticToggle.checked = view.diagnosticEnabled;
     els.diagnosticPanel.hidden = !view.diagnosticVisible;
     els.diagnosticEvents.textContent = formatEvents(current.recentEvents);
+    syncProfileSelect(view);
   }
 
   function isConnectionError(err) {
@@ -183,7 +234,8 @@
     if (els.startBtn.disabled) {
       return;
     }
-    send("START_RECORDING");
+    const profile = els.profileSelect.value || current.selectedProfile || null;
+    send("START_RECORDING", profile ? { profile } : {});
   });
 
   els.stopBtn.addEventListener("click", () => {
@@ -191,6 +243,32 @@
       return;
     }
     send("STOP_RECORDING", { sessionId: current.sessionId });
+  });
+
+  els.profileSelect.addEventListener("change", async () => {
+    if (syncingProfileSelect) {
+      return;
+    }
+    const profile = els.profileSelect.value || null;
+    current = Object.assign({}, current, { selectedProfile: profile });
+    render();
+    try {
+      const result = await sendToBackground({
+        type: "SET_PREFERRED_PROFILE",
+        profile,
+      });
+      if (result && result.ok) {
+        current = applyBackgroundResult(current, result);
+        render();
+      } else if (result && result.error && result.error.message) {
+        current = Object.assign({}, current, {
+          errorMessage: result.error.message,
+        });
+        render();
+      }
+    } catch (_err) {
+      // El valor local se mantiene; al iniciar se reenvía.
+    }
   });
 
   els.diagnosticToggle.addEventListener("change", async () => {

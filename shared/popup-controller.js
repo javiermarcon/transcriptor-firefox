@@ -24,6 +24,11 @@
         diagnosticEnabled: false,
         observationError: "",
         recentEvents: [],
+        profilesSupported: false,
+        profiles: [],
+        selectedProfile: null,
+        defaultProfile: null,
+        profilesError: "",
       };
     }
 
@@ -59,6 +64,27 @@
       }
       if (Array.isArray(result.recentEvents)) {
         next.recentEvents = result.recentEvents;
+      }
+      if (typeof result.profilesSupported === "boolean") {
+        next.profilesSupported = result.profilesSupported;
+      }
+      if (Array.isArray(result.profiles)) {
+        next.profiles = result.profiles;
+      }
+      if (Object.prototype.hasOwnProperty.call(result, "selectedProfile")) {
+        next.selectedProfile =
+          typeof result.selectedProfile === "string"
+            ? result.selectedProfile
+            : null;
+      }
+      if (Object.prototype.hasOwnProperty.call(result, "defaultProfile")) {
+        next.defaultProfile =
+          typeof result.defaultProfile === "string"
+            ? result.defaultProfile
+            : null;
+      }
+      if (typeof result.profilesError === "string") {
+        next.profilesError = result.profilesError;
       }
 
       if (result.ok) {

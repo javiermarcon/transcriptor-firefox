@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Meetings Transcriptor",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Controla el transcriptor local de reuniones desde Google Meet.",
   "browser_specific_settings": {
     "gecko": {

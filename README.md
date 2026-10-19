@@ -12,6 +12,7 @@ La extensión permite:
 - Detectar si la pestaña activa es `https://meet.google.com/…`.
 - Consultar el estado del host local `com.meetings.transcriptor`.
 - Pedir al host iniciar o detener una grabación con acción explícita del usuario.
+- Elegir el perfil de grabación del transcriptor (cuando el host implemente `list_profiles`).
 - Durante una grabación, observar metadatos visibles de participantes/hablante en Meet y enviarlos al host con `record_meet_event`.
 - Mostrar errores claros si el host no está instalado, no responde o rechaza la operación.
 
@@ -24,17 +25,18 @@ La extensión **no**:
 
 ## Estado real de implementación
 
-| Capacidad                                    | Estado                                               |
-| -------------------------------------------- | ---------------------------------------------------- |
-| Popup + estados de UI                        | Implementado                                         |
-| Detección de pestaña Meet por URL            | Implementado                                         |
-| Cliente Native Messaging + protocolo v1      | Implementado en la extensión                         |
-| Evitar “Grabando” sin `session_id` del host  | Implementado                                         |
-| Metadatos de participantes / hablante visual | Implementado (heurístico; ver `docs/MEET_EVENTS.md`) |
-| Persistencia de eventos en el host           | Pendiente en el host (`record_meet_event`)           |
-| Suite unitaria, lint, format, pre-commit     | Implementado                                         |
-| Host nativo real / grabación end-to-end      | **Fuera de este repo**                               |
-| Prueba manual en reunión Meet real           | Pendiente (ver `TESTING.md`)                         |
+| Capacidad                                    | Estado                                                     |
+| -------------------------------------------- | ---------------------------------------------------------- |
+| Popup + estados de UI                        | Implementado                                               |
+| Detección de pestaña Meet por URL            | Implementado                                               |
+| Cliente Native Messaging + protocolo v1      | Implementado en la extensión                               |
+| Evitar “Grabando” sin `session_id` del host  | Implementado                                               |
+| Metadatos de participantes / hablante visual | Implementado (heurístico; ver `docs/MEET_EVENTS.md`)       |
+| Selector de perfil de grabación              | Implementado en la extensión; host: ver `docs/PROFILES.md` |
+| Persistencia de eventos en el host           | Pendiente en el host (`record_meet_event`)                 |
+| Suite unitaria, lint, format, pre-commit     | Implementado                                               |
+| Host nativo real / grabación end-to-end      | **Fuera de este repo**                                     |
+| Prueba manual en reunión Meet real           | Pendiente (ver `TESTING.md`)                               |
 
 Hasta validar un host real, no se debe asumir que una grabación de reunión completa funciona solo porque la UI está lista.
 

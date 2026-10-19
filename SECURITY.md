@@ -1,6 +1,6 @@
 # Seguridad
 
-Modelo de seguridad de la extensión v0.2.0 según el código actual.
+Modelo de seguridad de la extensión v0.3.0 según el código actual.
 
 ## Permisos solicitados
 
@@ -28,7 +28,8 @@ No se solicitan:
 **Envía al host local (JSON por Native Messaging):**
 
 - `get_status`
-- `start_recording` / `stop_recording`
+- `list_profiles` (si el host lo implementa)
+- `start_recording` / `stop_recording` (con `profile` opcional)
 - `record_meet_event` con el payload documentado en `docs/MEET_EVENTS.md`
 
 **No envía** audio, video, cookies, tokens de Google ni datos a servicios externos.
@@ -62,4 +63,5 @@ No se solicitan:
 | Selectores Meet inestables               | `confidence`/`quality`; documentado; no inventar nombres                                 |
 | Confundir presencia con autoría de frase | Advertencia en eventos y docs                                                            |
 | Host aún sin `record_meet_event`         | La extensión envía el contrato; errores del host no inventan éxito local de persistencia |
+| Host aún sin `list_profiles` / `profile` | No se envía `profile` en start; se usa el default del host (`NATIVE_MESSAGING_PROFILE`)  |
 | Content script cargado en Meet idle      | No observa hasta `START_MEET_OBSERVATION`                                                |

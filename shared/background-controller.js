@@ -35,6 +35,90 @@
       let diagnosticEnabled = false;
       let diagnosticEvents = [];
       let lastObservationError = null;
+      let preferredProfile = null;
+      let cachedProfiles = [];
+      let profilesSupported = false;
+      let profilesError = "";
+      let defaultProfile = null;
+
+      function isValidProfile(name) {
+        if (protocol && typeof protocol.isValidProfileName === "function") {
+          return protocol.isValidProfileName(name);
+        }
+        return (
+          typeof name === "string" && /^[A-Za-z0-9_.-]+$/.test(name.trim())
+        );
+      }
+
+      function profileSnapshot() {
+        return {
+          profilesSupported,
+          profiles: cachedProfiles.slice(),
+          defaultProfile,
+          selectedProfile: preferredProfile,
+          profilesError,
+        };
+      }
+
+      async function refreshProfiles() {
+        if (typeof client.listProfiles !== "function") {
+          profilesSupported = false;
+          cachedProfiles = [];
+          defaultProfile = null;
+          profilesError = "";
+          return profileSnapshot();
+        }
+
+        try {
+          const response = await client.listProfiles();
+          if (!response.ok) {
+            const code = response.error && response.error.code;
+            profilesSupported = false;
+            cachedProfiles = [];
+            defaultProfile = null;
+            profilesError =
+              code === "UNKNOWN_ACTION"
+                ? "El host aún no soporta list_profiles; usará NATIVE_MESSAGING_PROFILE."
+                : (response.error && response.error.message) ||
+                  "No se pudieron listar los perfiles.";
+            return profileSnapshot();
+          }
+
+          const data = response.data || {};
+          profilesSupported = true;
+          cachedProfiles = Array.isArray(data.profiles)
+            ? data.profiles.slice()
+            : [];
+          defaultProfile =
+            typeof data.default_profile === "string"
+              ? data.default_profile
+              : null;
+          profilesError =
+            cachedProfiles.length === 0
+              ? "No hay perfiles en el directorio base del transcriptor."
+              : "";
+
+          if (preferredProfile && !cachedProfiles.includes(preferredProfile)) {
+            preferredProfile = null;
+          }
+          if (!preferredProfile && defaultProfile) {
+            preferredProfile = defaultProfile;
+          }
+          if (!preferredProfile && cachedProfiles.length === 1) {
+            preferredProfile = cachedProfiles[0];
+          }
+          return profileSnapshot();
+        } catch (err) {
+          profilesSupported = false;
+          cachedProfiles = [];
+          defaultProfile = null;
+          profilesError =
+            err && err.message
+              ? err.message
+              : "No se pudieron listar los perfiles.";
+          return profileSnapshot();
+        }
+      }
 
       function toErrorPayload(err) {
         return {
@@ -124,15 +208,18 @@
         try {
           const response = await client.getStatus();
           if (!response.ok) {
-            return {
-              ok: false,
-              tab: tabInfo,
-              transcriptorStatus: "error",
-              sessionId: lastSessionId,
-              observationActive: Boolean(observationTabId),
-              diagnosticEnabled,
-              error: response.error,
-            };
+            return Object.assign(
+              {
+                ok: false,
+                tab: tabInfo,
+                transcriptorStatus: "error",
+                sessionId: lastSessionId,
+                observationActive: Boolean(observationTabId),
+                diagnosticEnabled,
+                error: response.error,
+              },
+              profileSnapshot()
+            );
           }
 
           const data = response.data || {};
@@ -145,83 +232,198 @@
             lastSessionId = null;
           }
 
-          return {
-            ok: true,
-            tab: tabInfo,
-            transcriptorStatus: data.status || "ready",
-            sessionId: data.session_id || lastSessionId,
-            hostMessage: data.message || "",
-            observationActive: Boolean(observationTabId),
-            diagnosticEnabled,
-            observationError: lastObservationError || "",
-          };
+          const profiles = await refreshProfiles();
+          return Object.assign(
+            {
+              ok: true,
+              tab: tabInfo,
+              transcriptorStatus: data.status || "ready",
+              sessionId: data.session_id || lastSessionId,
+              hostMessage: data.message || "",
+              observationActive: Boolean(observationTabId),
+              diagnosticEnabled,
+              observationError: lastObservationError || "",
+            },
+            profiles
+          );
         } catch (err) {
           const failure = toErrorPayload(err);
-          return {
-            ok: false,
-            tab: tabInfo,
-            transcriptorStatus: hostUnavailableStatus(failure.error.code),
-            sessionId: lastSessionId,
-            observationActive: Boolean(observationTabId),
-            diagnosticEnabled,
-            error: failure.error,
-          };
+          return Object.assign(
+            {
+              ok: false,
+              tab: tabInfo,
+              transcriptorStatus: hostUnavailableStatus(failure.error.code),
+              sessionId: lastSessionId,
+              observationActive: Boolean(observationTabId),
+              diagnosticEnabled,
+              error: failure.error,
+            },
+            profileSnapshot()
+          );
         }
+      }
+
+      function handleSetPreferredProfile(message) {
+        const raw = message && message.profile;
+        if (raw === null || raw === "") {
+          preferredProfile = null;
+          return Promise.resolve(
+            Object.assign({ ok: true }, profileSnapshot())
+          );
+        }
+        if (!isValidProfile(raw)) {
+          return Promise.resolve({
+            ok: false,
+            error: {
+              code: "INVALID_PROFILE",
+              message:
+                "Nombre de perfil inválido. Usá letras, números, punto, guion o guion bajo.",
+            },
+          });
+        }
+        const name = String(raw).trim();
+        if (
+          profilesSupported &&
+          cachedProfiles.length &&
+          !cachedProfiles.includes(name)
+        ) {
+          return Promise.resolve({
+            ok: false,
+            error: {
+              code: "UNKNOWN_PROFILE",
+              message: `El perfil "${name}" no está en la lista del host.`,
+            },
+          });
+        }
+        preferredProfile = name;
+        return Promise.resolve(Object.assign({ ok: true }, profileSnapshot()));
       }
 
       async function handleStartRecording(message) {
         const tabInfo = await resolveTabInfo(message);
 
         if (!tabInfo.onMeet) {
-          return {
-            ok: false,
-            tab: tabInfo,
-            transcriptorStatus: "error",
-            sessionId: lastSessionId,
-            error: {
-              code: "NOT_MEET_TAB",
-              message:
-                "Abrí una pestaña de Google Meet antes de iniciar la grabación.",
-            },
-          };
-        }
-
-        try {
-          const response = await client.startRecording({
-            url: tabInfo.url,
-            title: tabInfo.title || "Reunión de Google Meet",
-          });
-
-          if (!response.ok) {
-            return {
+          return Object.assign(
+            {
               ok: false,
               tab: tabInfo,
               transcriptorStatus: "error",
               sessionId: lastSessionId,
-              error: response.error,
-            };
+              error: {
+                code: "NOT_MEET_TAB",
+                message:
+                  "Abrí una pestaña de Google Meet antes de iniciar la grabación.",
+              },
+            },
+            profileSnapshot()
+          );
+        }
+
+        const requestedProfile =
+          message &&
+          typeof message.profile === "string" &&
+          message.profile.trim()
+            ? message.profile.trim()
+            : preferredProfile;
+
+        if (requestedProfile) {
+          if (!isValidProfile(requestedProfile)) {
+            return Object.assign(
+              {
+                ok: false,
+                tab: tabInfo,
+                transcriptorStatus: "error",
+                sessionId: lastSessionId,
+                error: {
+                  code: "INVALID_PROFILE",
+                  message:
+                    "Nombre de perfil inválido. Usá letras, números, punto, guion o guion bajo.",
+                },
+              },
+              profileSnapshot()
+            );
+          }
+          preferredProfile = requestedProfile;
+        }
+
+        if (
+          profilesSupported &&
+          cachedProfiles.length > 0 &&
+          !preferredProfile
+        ) {
+          return Object.assign(
+            {
+              ok: false,
+              tab: tabInfo,
+              transcriptorStatus: "error",
+              sessionId: lastSessionId,
+              error: {
+                code: "PROFILE_REQUIRED",
+                message: "Elegí un perfil antes de iniciar la grabación.",
+              },
+            },
+            profileSnapshot()
+          );
+        }
+
+        try {
+          const startPayload = {
+            url: tabInfo.url,
+            title: tabInfo.title || "Reunión de Google Meet",
+          };
+          // Solo enviar profile si el host listó perfiles (acepta el campo).
+          if (profilesSupported && preferredProfile) {
+            startPayload.profile = preferredProfile;
+          }
+
+          const response = await client.startRecording(startPayload);
+
+          if (!response.ok) {
+            return Object.assign(
+              {
+                ok: false,
+                tab: tabInfo,
+                transcriptorStatus: "error",
+                sessionId: lastSessionId,
+                error: response.error,
+              },
+              profileSnapshot()
+            );
           }
 
           lastSessionId = response.data.session_id;
+          const recordedProfile =
+            response.data && typeof response.data.profile === "string"
+              ? response.data.profile
+              : preferredProfile;
+          if (recordedProfile && isValidProfile(recordedProfile)) {
+            preferredProfile = recordedProfile.trim();
+          }
           await startObservation(lastSessionId, message && message.tab);
-          return {
-            ok: true,
-            tab: tabInfo,
-            transcriptorStatus: "recording",
-            sessionId: lastSessionId,
-            observationActive: Boolean(observationTabId),
-            diagnosticEnabled,
-            observationError: lastObservationError || "",
-          };
+          return Object.assign(
+            {
+              ok: true,
+              tab: tabInfo,
+              transcriptorStatus: "recording",
+              sessionId: lastSessionId,
+              observationActive: Boolean(observationTabId),
+              diagnosticEnabled,
+              observationError: lastObservationError || "",
+            },
+            profileSnapshot()
+          );
         } catch (err) {
           const failure = toErrorPayload(err);
-          return {
-            ok: false,
-            tab: tabInfo,
-            transcriptorStatus: hostUnavailableStatus(failure.error.code),
-            sessionId: lastSessionId,
-            error: failure.error,
-          };
+          return Object.assign(
+            {
+              ok: false,
+              tab: tabInfo,
+              transcriptorStatus: hostUnavailableStatus(failure.error.code),
+              sessionId: lastSessionId,
+              error: failure.error,
+            },
+            profileSnapshot()
+          );
         }
       }
 
@@ -390,6 +592,8 @@
             return handleStartRecording(message);
           case "STOP_RECORDING":
             return handleStopRecording(message);
+          case "SET_PREFERRED_PROFILE":
+            return handleSetPreferredProfile(message);
           case "MEET_EVENT":
             return handleMeetEvent(message);
           case "GET_DIAGNOSTICS":
@@ -430,6 +634,9 @@
         },
         isDiagnosticEnabled() {
           return diagnosticEnabled;
+        },
+        getPreferredProfile() {
+          return preferredProfile;
         },
       };
     }

@@ -15,10 +15,13 @@
   const NATIVE_HOST_NAME = "com.meetings.transcriptor";
   const ACTIONS = Object.freeze({
     GET_STATUS: "get_status",
+    LIST_PROFILES: "list_profiles",
     START_RECORDING: "start_recording",
     STOP_RECORDING: "stop_recording",
     RECORD_MEET_EVENT: "record_meet_event",
   });
+
+  const PROFILE_NAME_RE = /^[A-Za-z0-9_.-]+$/;
 
   const ERROR_MESSAGES = Object.freeze({
     HOST_NOT_FOUND:
@@ -212,15 +215,58 @@
     return { status: "ready", session_id: sessionId };
   }
 
+  function isValidProfileName(name) {
+    return typeof name === "string" && PROFILE_NAME_RE.test(name.trim());
+  }
+
+  function normalizeProfilesData(data) {
+    const source = isObject(data) ? data : {};
+    const profiles = Array.isArray(source.profiles)
+      ? source.profiles
+          .filter((name) => isValidProfileName(name))
+          .map((name) => name.trim())
+      : [];
+    const unique = [];
+    const seen = new Set();
+    for (const name of profiles) {
+      const key = name.toLowerCase();
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      unique.push(name);
+    }
+
+    let defaultProfile =
+      typeof source.default_profile === "string"
+        ? source.default_profile.trim()
+        : null;
+    if (!isValidProfileName(defaultProfile || "")) {
+      defaultProfile = null;
+    }
+    if (defaultProfile && !unique.some((p) => p === defaultProfile)) {
+      // El default puede existir en env aunque aún no haya carpeta listada.
+      unique.unshift(defaultProfile);
+    }
+
+    return {
+      profiles: unique,
+      default_profile: defaultProfile,
+    };
+  }
+
   return {
     PROTOCOL_VERSION,
     NATIVE_HOST_NAME,
     ACTIONS,
     ERROR_MESSAGES,
+    PROFILE_NAME_RE,
     buildRequest,
     validateResponse,
     requireSessionId,
     mapConnectionError,
     normalizeHostStatus,
+    isValidProfileName,
+    normalizeProfilesData,
   };
 });

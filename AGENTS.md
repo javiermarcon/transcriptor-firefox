@@ -11,15 +11,15 @@ Leé este archivo y la documentación enlazada **antes** de modificar código. L
 
 ## Arquitectura y responsabilidades
 
-| Módulo                                    | Responsabilidad                                                    |
-| ----------------------------------------- | ------------------------------------------------------------------ |
-| `manifest.json`                           | MV3 Firefox, ID fijo, `background.page`, content scripts solo Meet |
-| `shared/protocol.js` / `native-client.js` | NM incluyendo `record_meet_event`                                  |
-| `shared/meet-*.js`                        | Detección/diff/observación de metadatos Meet (testeable)           |
-| `shared/background-controller.js`         | Start/stop + bridge de eventos Meet                                |
-| `content/content.js`                      | Observa solo tras `START_MEET_OBSERVATION`                         |
-| `popup/*`                                 | UI + modo diagnóstico en memoria                                   |
-| `docs/MEET_EVENTS.md`                     | Contrato y fiabilidad de detecciones                               |
+| Módulo                                     | Responsabilidad                                                    |
+| ------------------------------------------ | ------------------------------------------------------------------ |
+| `manifest.json`                            | MV3 Firefox, ID fijo, `background.page`, content scripts solo Meet |
+| `shared/protocol.js` / `native-client.js`  | NM incluyendo `list_profiles` / `record_meet_event`                |
+| `shared/meet-*.js`                         | Detección/diff/observación de metadatos Meet (testeable)           |
+| `shared/background-controller.js`          | Start/stop + perfiles + bridge de eventos Meet                     |
+| `content/content.js`                       | Observa solo tras `START_MEET_OBSERVATION`                         |
+| `popup/*`                                  | UI + selector de perfil + modo diagnóstico                         |
+| `docs/MEET_EVENTS.md` / `docs/PROFILES.md` | Contratos Meet y perfiles                                          |
 
 No uses APIs `chrome.*`; usá `browser.*`. No asumas selectores estables de Meet.
 

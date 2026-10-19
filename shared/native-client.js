@@ -169,10 +169,35 @@
       );
     }
 
-    function startRecording({ url, title }, requestOptions) {
+    function listProfiles(requestOptions) {
+      return request(
+        protocol.ACTIONS.LIST_PROFILES,
+        {},
+        Object.assign({ timeoutMs: 5000 }, requestOptions || {})
+      ).then((response) => {
+        if (!response.ok) {
+          return response;
+        }
+        return {
+          ok: true,
+          request_id: response.request_id,
+          data: protocol.normalizeProfilesData(response.data),
+        };
+      });
+    }
+
+    function startRecording({ url, title, profile }, requestOptions) {
+      const payload = { url, title };
+      if (
+        typeof profile === "string" &&
+        profile.trim() &&
+        protocol.isValidProfileName(profile)
+      ) {
+        payload.profile = profile.trim();
+      }
       return request(
         protocol.ACTIONS.START_RECORDING,
-        { url, title },
+        payload,
         requestOptions
       ).then((response) => {
         if (!response.ok) {
@@ -260,6 +285,7 @@
     return {
       request,
       getStatus,
+      listProfiles,
       startRecording,
       stopRecording,
       recordMeetEvent,

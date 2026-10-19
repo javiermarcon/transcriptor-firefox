@@ -47,11 +47,24 @@
         : TRANSCRIPTOR_STATUS.DISCONNECTED;
     }
 
+    const profilesSupported = Boolean(input.profilesSupported);
+    const profiles = Array.isArray(input.profiles) ? input.profiles : [];
+    const selectedProfile =
+      typeof input.selectedProfile === "string" && input.selectedProfile.trim()
+        ? input.selectedProfile.trim()
+        : null;
+    const profilesError =
+      typeof input.profilesError === "string" ? input.profilesError.trim() : "";
+    const profileRequired = profilesSupported && profiles.length > 0;
+    const profileReady = !profileRequired || Boolean(selectedProfile);
+
     const canStart =
       !busy &&
       tab.onMeet &&
       transcriptorStatus === TRANSCRIPTOR_STATUS.READY &&
-      !sessionId;
+      !sessionId &&
+      profileReady &&
+      !(profilesSupported && profiles.length === 0);
 
     const canStop =
       !busy &&
@@ -88,6 +101,22 @@
       diagnosticEnabled,
       observationError,
       diagnosticVisible: diagnosticEnabled,
+      profilesSupported,
+      profiles,
+      selectedProfile,
+      profilesError,
+      profileSelectEnabled:
+        !busy &&
+        transcriptorStatus === TRANSCRIPTOR_STATUS.READY &&
+        !sessionId &&
+        profilesSupported &&
+        profiles.length > 0,
+      profileHint: profilesSupported
+        ? profiles.length === 0
+          ? profilesError || "No hay perfiles disponibles."
+          : ""
+        : profilesError ||
+          "El host usará el perfil de NATIVE_MESSAGING_PROFILE hasta que soporte list_profiles.",
     };
   }
 

@@ -1,6 +1,6 @@
 # Arquitectura
 
-Documento de la arquitectura **efectiva** de la extensión v0.2.0.
+Documento de la arquitectura **efectiva** de la extensión v0.3.0.
 
 ## Vista general
 
@@ -32,7 +32,9 @@ flowchart LR
 Archivos: `popup/popup.html`, `popup/popup.css`, `popup/popup.js`.
 
 - Control start/stop + estado.
+- Selector de perfil de grabación (vía `list_profiles` / `profile` en start).
 - Modo diagnóstico en memoria (últimos eventos).
+- Detalle del contrato de perfiles: [`docs/PROFILES.md`](./docs/PROFILES.md).
 
 ## Background
 
@@ -61,12 +63,13 @@ Scripts en `shared/meet-*.js` + `content/content.js`.
 
 ## Contrato interno (popup/content → background)
 
-| `type`                                              | Efecto                                |
-| --------------------------------------------------- | ------------------------------------- |
-| `GET_STATUS` / `START_RECORDING` / `STOP_RECORDING` | Igual que v0.1 + flags de observación |
-| `MEET_EVENT`                                        | Content → background → host           |
-| `SET_DIAGNOSTIC` / `GET_DIAGNOSTICS`                | Buffer en memoria                     |
-| `START_MEET_OBSERVATION` / `STOP_MEET_OBSERVATION`  | Background → content                  |
+| `type`                                              | Efecto                                            |
+| --------------------------------------------------- | ------------------------------------------------- |
+| `GET_STATUS` / `START_RECORDING` / `STOP_RECORDING` | Estado + start/stop; start puede llevar `profile` |
+| `SET_PREFERRED_PROFILE`                             | Recuerda el perfil elegido en el background       |
+| `MEET_EVENT`                                        | Content → background → host                       |
+| `SET_DIAGNOSTIC` / `GET_DIAGNOSTICS`                | Buffer en memoria                                 |
+| `START_MEET_OBSERVATION` / `STOP_MEET_OBSERVATION`  | Background → content                              |
 
 Detalle de eventos y fiabilidad: [`docs/MEET_EVENTS.md`](./docs/MEET_EVENTS.md).
 
