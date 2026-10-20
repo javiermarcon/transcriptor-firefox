@@ -29,6 +29,17 @@ function validateManifest(manifest, options = {}) {
         "meetings-transcriptor@example.org",
     "ID fijo meetings-transcriptor@example.org requerido"
   );
+  const dataCollection =
+    manifest.browser_specific_settings &&
+    manifest.browser_specific_settings.gecko &&
+    manifest.browser_specific_settings.gecko.data_collection_permissions;
+  assert(
+    dataCollection &&
+      Array.isArray(dataCollection.required) &&
+      dataCollection.required.length === 1 &&
+      dataCollection.required[0] === "none",
+    'gecko.data_collection_permissions.required debe ser ["none"] (sin envío de datos personales)'
+  );
   assert(
     Array.isArray(manifest.permissions) &&
       manifest.permissions.includes("nativeMessaging"),

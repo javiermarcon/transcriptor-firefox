@@ -1,6 +1,22 @@
 # Texto para addons.mozilla.org (listed)
 
-Copiá estos campos en el Developer Hub al publicar/actualizar el add-on.
+Copiá estos campos en el Developer Hub al publicar/actualizar el add-on
+**después** de que el zip/xpi pase la validación automática.
+
+Desde nov. 2025 AMO exige en `manifest.json`:
+
+```json
+"browser_specific_settings": {
+  "gecko": {
+    "data_collection_permissions": { "required": ["none"] }
+  }
+}
+```
+
+Sin eso falla el upload con _The 'data_collection_permissions' property is missing_
+y **no** llega al formulario de descripción (Edit Product Page).
+La descripción larga se edita en **Edit Product Page** del add-on ya creado,
+no en el primer paso de subir el archivo.
 Fuente: este repo + host obligatorio
 [`javiermarcon/transcriptor`](https://github.com/javiermarcon/transcriptor).
 
