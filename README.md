@@ -12,6 +12,7 @@ La extensión permite:
 - Detectar si la pestaña activa es `https://meet.google.com/…`.
 - Consultar el estado del host local `com.meetings.transcriptor`.
 - Pedir al host iniciar o detener una grabación con acción explícita del usuario.
+- Al detener, preguntar si transcribir ahora y mostrar el progreso de WhisperX (mismo `%` que el CLI).
 - Elegir el perfil de grabación del transcriptor (cuando el host implemente `list_profiles`).
 - Durante una grabación, observar metadatos visibles de participantes/hablante en Meet y enviarlos al host con `record_meet_event`.
 - Mostrar errores claros si el host no está instalado, no responde o rechaza la operación.

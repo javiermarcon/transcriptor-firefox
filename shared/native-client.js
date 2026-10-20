@@ -198,10 +198,31 @@
           if (!response.ok) {
             return response;
           }
+          const raw = response.data || {};
+          const normalized = protocol.normalizeHostStatus(raw);
           return {
             ok: true,
             request_id: response.request_id,
-            data: protocol.normalizeHostStatus(response.data),
+            data: Object.assign({}, normalized, {
+              transcribed: Boolean(raw.transcribed),
+              transcription_error:
+                typeof raw.transcription_error === "string"
+                  ? raw.transcription_error
+                  : null,
+              meeting_dir:
+                typeof raw.meeting_dir === "string"
+                  ? raw.meeting_dir
+                  : normalized.meeting_dir || null,
+              plain_transcript:
+                typeof raw.plain_transcript === "string"
+                  ? raw.plain_transcript
+                  : null,
+              speaker_transcript:
+                typeof raw.speaker_transcript === "string"
+                  ? raw.speaker_transcript
+                  : null,
+              profile: typeof raw.profile === "string" ? raw.profile : null,
+            }),
           };
         }
       );
@@ -269,31 +290,70 @@
       });
     }
 
-    function stopRecording({ session_id }, requestOptions) {
-      return request(
-        protocol.ACTIONS.STOP_RECORDING,
-        { session_id },
-        requestOptions
-      ).then((response) => {
-        if (!response.ok) {
+    function stopRecording({ session_id, transcribe }, requestOptions) {
+      const payload = { session_id };
+      if (typeof transcribe === "boolean") {
+        payload.transcribe = transcribe;
+      }
+      // WhisperX corre en segundo plano en el host; el stop debe responder rápido.
+      const opts = Object.assign(
+        { retryOnTimeout: false },
+        requestOptions || {}
+      );
+      return request(protocol.ACTIONS.STOP_RECORDING, payload, opts).then(
+        (response) => {
+          if (!response.ok) {
+            return {
+              ok: false,
+              request_id: response.request_id,
+              error: {
+                code: response.error.code || "STOP_REJECTED",
+                message:
+                  response.error.message ||
+                  protocol.ERROR_MESSAGES.STOP_REJECTED,
+              },
+            };
+          }
+          const data = response.data || {};
+          const statusHint = data.transcription_started
+            ? "transcribing"
+            : data.status || "ready";
           return {
-            ok: false,
+            ok: true,
             request_id: response.request_id,
-            error: {
-              code: response.error.code || "STOP_REJECTED",
-              message:
-                response.error.message || protocol.ERROR_MESSAGES.STOP_REJECTED,
-            },
+            data: Object.assign(
+              protocol.normalizeHostStatus(
+                Object.assign({}, data, { status: statusHint })
+              ),
+              {
+                transcribed: Boolean(data.transcribed),
+                transcription_started: Boolean(data.transcription_started),
+                transcription_error:
+                  typeof data.transcription_error === "string"
+                    ? data.transcription_error
+                    : null,
+                meeting_dir:
+                  typeof data.meeting_dir === "string"
+                    ? data.meeting_dir
+                    : null,
+                profile: typeof data.profile === "string" ? data.profile : null,
+                plain_transcript:
+                  typeof data.plain_transcript === "string"
+                    ? data.plain_transcript
+                    : null,
+                speaker_transcript:
+                  typeof data.speaker_transcript === "string"
+                    ? data.speaker_transcript
+                    : null,
+                files:
+                  data.files && typeof data.files === "object"
+                    ? data.files
+                    : null,
+              }
+            ),
           };
         }
-        return {
-          ok: true,
-          request_id: response.request_id,
-          data: protocol.normalizeHostStatus(
-            Object.assign({ status: "ready" }, response.data || {})
-          ),
-        };
-      });
+      );
     }
 
     function recordMeetEvent(event, requestOptions) {

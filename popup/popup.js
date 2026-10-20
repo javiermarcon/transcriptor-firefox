@@ -12,6 +12,7 @@
     profileSelect: document.getElementById("profile-select"),
     profileHint: document.getElementById("profile-hint"),
     errorMessage: document.getElementById("error-message"),
+    infoMessage: document.getElementById("info-message"),
     observationError: document.getElementById("observation-error"),
     startBtn: document.getElementById("start-btn"),
     stopBtn: document.getElementById("stop-btn"),
@@ -109,6 +110,14 @@
       els.errorMessage.textContent = "";
     }
 
+    if (view.infoMessage) {
+      els.infoMessage.hidden = false;
+      els.infoMessage.textContent = view.infoMessage;
+    } else {
+      els.infoMessage.hidden = true;
+      els.infoMessage.textContent = "";
+    }
+
     if (view.observationError) {
       els.observationError.hidden = false;
       els.observationError.textContent = view.observationError;
@@ -122,7 +131,7 @@
     els.stopBtn.hidden = !view.stopVisible;
     els.startBtn.textContent = view.busy ? "Trabajando…" : "Iniciar grabación";
     els.stopBtn.textContent = view.busy
-      ? "Finalizando…"
+      ? view.busyLabel || "Finalizando…"
       : "Detener y finalizar";
 
     els.diagnosticToggle.checked = view.diagnosticEnabled;
@@ -184,18 +193,123 @@
     }
   }
 
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  const TRANSCRIPTION_POLL_MS = 1000;
+  const TRANSCRIPTION_MAX_MS = 2 * 60 * 60 * 1000;
+
+  async function pollTranscriptionProgress() {
+    const deadline = Date.now() + TRANSCRIPTION_MAX_MS;
+    current = Object.assign({}, current, {
+      busy: true,
+      busyLabel: "Transcribiendo…",
+    });
+    render();
+
+    while (Date.now() < deadline) {
+      try {
+        const tab = await readActiveTab();
+        const result = await sendToBackground({ type: "GET_STATUS", tab });
+        current = applyBackgroundResult(current, result);
+
+        if (result.transcriptorStatus === "transcribing") {
+          const label =
+            result.progress && typeof result.progress.label === "string"
+              ? result.progress.label.trim()
+              : "";
+          const info = label ? `Transcribiendo… ${label}` : "Transcribiendo…";
+          current = Object.assign({}, current, {
+            busy: true,
+            busyLabel: info,
+            infoMessage: info,
+            errorMessage: "",
+          });
+          render();
+          await sleep(TRANSCRIPTION_POLL_MS);
+          continue;
+        }
+
+        if (result.transcribed) {
+          const path = result.plainTranscript;
+          current = Object.assign({}, current, {
+            infoMessage: path
+              ? `Transcripción lista: ${path}`
+              : "Transcripción lista.",
+            errorMessage: "",
+            transcriptionStarted: false,
+          });
+        } else if (result.transcriptionError) {
+          current = Object.assign({}, current, {
+            infoMessage: `Grabación detenida, pero falló la transcripción: ${result.transcriptionError}`,
+            errorMessage: "",
+            transcriptionStarted: false,
+          });
+        } else {
+          current = Object.assign({}, current, {
+            transcriptionStarted: false,
+          });
+        }
+        break;
+      } catch (err) {
+        current = applyBackgroundResult(current, {
+          ok: false,
+          transcriptorStatus: "error",
+          error: {
+            code: "BACKGROUND_UNAVAILABLE",
+            message: humanizeBackgroundError(err),
+          },
+        });
+        break;
+      }
+    }
+
+    if (
+      Date.now() >= deadline &&
+      current.transcriptorStatus === "transcribing"
+    ) {
+      current = Object.assign({}, current, {
+        errorMessage:
+          "La transcripción sigue en curso pero superó el tiempo de espera del popup. Revisá el host o volvé a abrir el popup más tarde.",
+        infoMessage: "",
+      });
+    }
+
+    current = Object.assign({}, current, { busy: false, busyLabel: "" });
+    render();
+  }
+
   async function send(type, extra = {}) {
     current = Object.assign({}, current, {
       busy: true,
+      busyLabel: extra.busyLabel || "",
       errorMessage: "",
+      infoMessage: "",
     });
     render();
     try {
       const tab = await readActiveTab();
-      const result = await sendToBackground(
-        Object.assign({ type, tab }, extra)
-      );
+      const payload = Object.assign({ type, tab }, extra);
+      delete payload.busyLabel;
+      const result = await sendToBackground(payload);
       current = applyBackgroundResult(current, result);
+      if (
+        type === "STOP_RECORDING" &&
+        result &&
+        result.ok &&
+        (result.transcriptionStarted ||
+          result.transcriptorStatus === "transcribing")
+      ) {
+        // Mantener busy mientras WhisperX reporta progreso vía get_status.
+        current = Object.assign({}, current, {
+          busy: true,
+          busyLabel: "Transcribiendo…",
+        });
+        render();
+        await pollTranscriptionProgress();
+        return;
+      }
     } catch (err) {
       current = applyBackgroundResult(current, {
         ok: false,
@@ -206,7 +320,9 @@
         },
       });
     } finally {
-      current = Object.assign({}, current, { busy: false });
+      if (current.transcriptorStatus !== "transcribing") {
+        current = Object.assign({}, current, { busy: false, busyLabel: "" });
+      }
       render();
     }
   }
@@ -242,7 +358,14 @@
     if (els.stopBtn.disabled) {
       return;
     }
-    send("STOP_RECORDING", { sessionId: current.sessionId });
+    const transcribe = window.confirm(
+      "¿Transcribir ahora?\n\nAceptar: detener y transcribir (puede demorar varios minutos).\nCancelar: detener y solo guardar la grabación."
+    );
+    send("STOP_RECORDING", {
+      sessionId: current.sessionId,
+      transcribe,
+      busyLabel: transcribe ? "Transcribiendo…" : "Finalizando…",
+    });
   });
 
   els.profileSelect.addEventListener("change", async () => {

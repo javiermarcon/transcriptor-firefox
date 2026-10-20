@@ -14,6 +14,7 @@
     DISCONNECTED: "disconnected",
     READY: "ready",
     RECORDING: "recording",
+    TRANSCRIBING: "transcribing",
     ERROR: "error",
   });
 
@@ -21,6 +22,7 @@
     disconnected: "Desconectado",
     ready: "Listo",
     recording: "Grabando",
+    transcribing: "Transcribiendo",
     error: "Error",
   });
 
@@ -38,6 +40,14 @@
     const errorMessage =
       typeof input.errorMessage === "string" && input.errorMessage.trim()
         ? input.errorMessage.trim()
+        : "";
+    const infoMessage =
+      typeof input.infoMessage === "string" && input.infoMessage.trim()
+        ? input.infoMessage.trim()
+        : "";
+    const busyLabel =
+      typeof input.busyLabel === "string" && input.busyLabel.trim()
+        ? input.busyLabel.trim()
         : "";
 
     let transcriptorStatus = input.transcriptorStatus;
@@ -87,9 +97,11 @@
         STATUS_LABELS[transcriptorStatus] || STATUS_LABELS.error,
       sessionId,
       errorMessage,
+      infoMessage,
       canStart,
       canStop,
       busy,
+      busyLabel,
       startDisabled: !canStart,
       stopDisabled: !canStop,
       startVisible: true,

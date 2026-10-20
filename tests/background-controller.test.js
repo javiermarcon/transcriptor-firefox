@@ -151,8 +151,29 @@ describe("background-controller", () => {
         }),
         stopRecording: async (payload) => {
           stopped.push(payload);
-          return { ok: true, data: { status: "ready" } };
+          return {
+            ok: true,
+            data: {
+              status: "transcribing",
+              transcribed: false,
+              transcription_started: true,
+              meeting_dir: "/tmp/m",
+            },
+          };
         },
+        getStatus: async () => ({
+          ok: true,
+          data: {
+            status: "transcribing",
+            meeting_dir: "/tmp/m",
+            progress: {
+              percent: 34,
+              current_s: 721,
+              total_s: 2100,
+              label: "[ 34.00%] 12:01 / 35:00",
+            },
+          },
+        }),
       }),
       getActiveTab: async () => meetTab(),
     });
@@ -161,12 +182,246 @@ describe("background-controller", () => {
     const result = await controller.handleMessage({
       type: "STOP_RECORDING",
       sessionId: "sess-12",
+      transcribe: true,
     });
     assert.equal(result.ok, true);
-    assert.equal(result.transcriptorStatus, "ready");
+    assert.equal(result.transcriptorStatus, "transcribing");
     assert.equal(result.sessionId, null);
-    assert.deepEqual(stopped[0], { session_id: "sess-12" });
+    assert.equal(result.transcriptionStarted, true);
+    assert.equal(result.transcribed, false);
+    assert.match(result.hostMessage, /Transcribiendo/);
+    assert.deepEqual(stopped[0], {
+      session_id: "sess-12",
+      transcribe: true,
+    });
     assert.equal(controller.getLastSessionId(), null);
+
+    const status = await controller.handleMessage({ type: "GET_STATUS" });
+    assert.equal(status.transcriptorStatus, "transcribing");
+    assert.equal(status.progress.label, "[ 34.00%] 12:01 / 35:00");
+
+    const doneCtrl = createBackgroundController({
+      protocol: Protocol,
+      meetTab: MeetTab,
+      client: createFakeClient({
+        getStatus: async () => ({
+          ok: true,
+          data: {
+            status: "ready",
+            transcribed: true,
+            plain_transcript: "/tmp/t.txt",
+            transcription_error: null,
+            meeting_dir: "/tmp/m",
+          },
+        }),
+      }),
+      getActiveTab: async () => meetTab(),
+    });
+    const done = await doneCtrl.handleMessage({ type: "GET_STATUS" });
+    assert.equal(done.transcribed, true);
+    assert.equal(done.plainTranscript, "/tmp/t.txt");
+    assert.equal(done.meetingDir, "/tmp/m");
+    assert.equal(done.transcriptionError, null);
+
+    const errCtrl = createBackgroundController({
+      protocol: Protocol,
+      meetTab: MeetTab,
+      client: createFakeClient({
+        getStatus: async () => ({
+          ok: true,
+          data: {
+            status: "ready",
+            transcribed: false,
+            transcription_error: "sin GPU",
+            meeting_dir: "/tmp/m",
+          },
+        }),
+      }),
+      getActiveTab: async () => meetTab(),
+    });
+    const failed = await errCtrl.handleMessage({ type: "GET_STATUS" });
+    assert.equal(failed.transcriptionError, "sin GPU");
+    assert.equal(failed.plainTranscript, null);
+  });
+
+  it("STOP_RECORDING informa error de transcripción o solo grabación", async () => {
+    const stopped = [];
+    const controller = createBackgroundController({
+      protocol: Protocol,
+      meetTab: MeetTab,
+      client: createFakeClient({
+        startRecording: async () => ({
+          ok: true,
+          data: { session_id: "sess-tx", status: "recording" },
+        }),
+        stopRecording: async (payload) => {
+          stopped.push(payload);
+          if (payload.transcribe) {
+            return {
+              ok: true,
+              data: {
+                status: "ready",
+                transcribed: false,
+                transcription_error: "sin GPU",
+                meeting_dir: "/tmp/m",
+              },
+            };
+          }
+          return {
+            ok: true,
+            data: {
+              status: "ready",
+              transcribed: false,
+              meeting_dir: "/tmp/solo",
+            },
+          };
+        },
+      }),
+      getActiveTab: async () => meetTab(),
+    });
+
+    await controller.handleMessage({ type: "START_RECORDING" });
+    const failedTx = await controller.handleMessage({
+      type: "STOP_RECORDING",
+      sessionId: "sess-tx",
+      transcribe: true,
+    });
+    assert.equal(failedTx.ok, true);
+    assert.match(failedTx.hostMessage, /falló la transcripción.*sin GPU/);
+
+    const startedOnly = createBackgroundController({
+      protocol: Protocol,
+      meetTab: MeetTab,
+      client: createFakeClient({
+        startRecording: async () => ({
+          ok: true,
+          data: { session_id: "sess-async", status: "recording" },
+        }),
+        stopRecording: async () => ({
+          ok: true,
+          data: {
+            status: "transcribing",
+            transcription_started: true,
+            transcribed: false,
+          },
+        }),
+      }),
+      getActiveTab: async () => meetTab(),
+    });
+    await startedOnly.handleMessage({ type: "START_RECORDING" });
+    const asyncStop = await startedOnly.handleMessage({
+      type: "STOP_RECORDING",
+      sessionId: "sess-async",
+      transcribe: true,
+    });
+    assert.equal(asyncStop.transcriptionStarted, true);
+    assert.equal(asyncStop.hostMessage, "Grabación guardada. Transcribiendo…");
+
+    const withPath = createBackgroundController({
+      protocol: Protocol,
+      meetTab: MeetTab,
+      client: createFakeClient({
+        startRecording: async () => ({
+          ok: true,
+          data: { session_id: "sess-path", status: "recording" },
+        }),
+        stopRecording: async () => ({
+          ok: true,
+          data: {
+            status: "ready",
+            transcribed: true,
+            plain_transcript: "/tmp/done.txt",
+          },
+        }),
+      }),
+      getActiveTab: async () => meetTab(),
+    });
+    await withPath.handleMessage({ type: "START_RECORDING" });
+    const pathStop = await withPath.handleMessage({
+      type: "STOP_RECORDING",
+      sessionId: "sess-path",
+      transcribe: true,
+    });
+    assert.match(pathStop.hostMessage, /Transcripción lista: \/tmp\/done\.txt/);
+
+    const restarted = createBackgroundController({
+      protocol: Protocol,
+      meetTab: MeetTab,
+      client: createFakeClient({
+        startRecording: async () => ({
+          ok: true,
+          data: { session_id: "sess-save", status: "recording" },
+        }),
+        stopRecording: async (payload) => {
+          stopped.push(payload);
+          return {
+            ok: true,
+            data: {
+              status: "ready",
+              transcribed: true,
+              meeting_dir: "/tmp/solo",
+            },
+          };
+        },
+      }),
+      getActiveTab: async () => meetTab(),
+    });
+    await restarted.handleMessage({ type: "START_RECORDING" });
+    const saveOnly = await restarted.handleMessage({
+      type: "STOP_RECORDING",
+      sessionId: "sess-save",
+      transcribe: false,
+    });
+    assert.equal(saveOnly.ok, true);
+    assert.match(saveOnly.hostMessage, /Grabación guardada en: \/tmp\/solo/);
+    assert.deepEqual(stopped[stopped.length - 1], {
+      session_id: "sess-save",
+      transcribe: false,
+    });
+
+    const noPath = createBackgroundController({
+      protocol: Protocol,
+      meetTab: MeetTab,
+      client: createFakeClient({
+        startRecording: async () => ({
+          ok: true,
+          data: { session_id: "sess-np", status: "recording" },
+        }),
+        stopRecording: async () => ({
+          ok: true,
+          data: { status: "ready", transcribed: true },
+        }),
+      }),
+      getActiveTab: async () => meetTab(),
+    });
+    await noPath.handleMessage({ type: "START_RECORDING" });
+    const readyOnly = await noPath.handleMessage({
+      type: "STOP_RECORDING",
+      sessionId: "sess-np",
+      transcribe: true,
+    });
+    assert.equal(readyOnly.hostMessage, "Transcripción lista.");
+
+    const emptyData = createBackgroundController({
+      protocol: Protocol,
+      meetTab: MeetTab,
+      client: createFakeClient({
+        startRecording: async () => ({
+          ok: true,
+          data: { session_id: "sess-ed", status: "recording" },
+        }),
+        stopRecording: async () => ({ ok: true, data: null }),
+      }),
+      getActiveTab: async () => meetTab(),
+    });
+    await emptyData.handleMessage({ type: "START_RECORDING" });
+    const noMsg = await emptyData.handleMessage({
+      type: "STOP_RECORDING",
+      sessionId: "sess-ed",
+      transcribe: false,
+    });
+    assert.equal(noMsg.ok, true);
+    assert.equal(noMsg.hostMessage, "");
   });
 
   it("STOP_RECORDING sin sesión o con error del host", async () => {

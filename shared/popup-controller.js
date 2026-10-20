@@ -19,7 +19,9 @@
         transcriptorStatus: api.TRANSCRIPTOR_STATUS.DISCONNECTED,
         sessionId: null,
         errorMessage: "",
+        infoMessage: "",
         busy: false,
+        busyLabel: "",
         observationActive: false,
         diagnosticEnabled: false,
         observationError: "",
@@ -29,6 +31,11 @@
         selectedProfile: null,
         defaultProfile: null,
         profilesError: "",
+        transcriptionStarted: false,
+        progress: null,
+        transcribed: false,
+        transcriptionError: null,
+        plainTranscript: null,
       };
     }
 
@@ -86,6 +93,30 @@
       if (typeof result.profilesError === "string") {
         next.profilesError = result.profilesError;
       }
+      if (typeof result.transcriptionStarted === "boolean") {
+        next.transcriptionStarted = result.transcriptionStarted;
+      }
+      if (Object.prototype.hasOwnProperty.call(result, "progress")) {
+        next.progress =
+          result.progress && typeof result.progress === "object"
+            ? result.progress
+            : null;
+      }
+      if (typeof result.transcribed === "boolean") {
+        next.transcribed = result.transcribed;
+      }
+      if (Object.prototype.hasOwnProperty.call(result, "transcriptionError")) {
+        next.transcriptionError =
+          typeof result.transcriptionError === "string"
+            ? result.transcriptionError
+            : null;
+      }
+      if (Object.prototype.hasOwnProperty.call(result, "plainTranscript")) {
+        next.plainTranscript =
+          typeof result.plainTranscript === "string"
+            ? result.plainTranscript
+            : null;
+      }
 
       const hostMessage =
         typeof result.hostMessage === "string" ? result.hostMessage.trim() : "";
@@ -97,10 +128,16 @@
         ) {
           // El host puede responder ok:true con status "error" y un mensaje.
           next.errorMessage = hostMessage;
+        } else if (hostMessage) {
+          // Mensajes informativos post-stop (ruta de grabación / transcripción).
+          next.infoMessage = hostMessage;
+          next.errorMessage = "";
         } else {
           next.errorMessage = "";
+          next.infoMessage = "";
         }
       } else if (result.error && result.error.message) {
+        next.infoMessage = "";
         next.errorMessage = result.error.message;
         if (
           result.transcriptorStatus === api.TRANSCRIPTOR_STATUS.DISCONNECTED ||
@@ -113,10 +150,12 @@
             result.transcriptorStatus || api.TRANSCRIPTOR_STATUS.ERROR;
         }
       } else if (hostMessage) {
+        next.infoMessage = "";
         next.errorMessage = hostMessage;
         next.transcriptorStatus =
           result.transcriptorStatus || api.TRANSCRIPTOR_STATUS.ERROR;
       } else {
+        next.infoMessage = "";
         next.errorMessage = "Ocurrió un error al hablar con el host local.";
         next.transcriptorStatus = api.TRANSCRIPTOR_STATUS.ERROR;
       }

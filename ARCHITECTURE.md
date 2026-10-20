@@ -63,13 +63,14 @@ Scripts en `shared/meet-*.js` + `content/content.js`.
 
 ## Contrato interno (popup/content → background)
 
-| `type`                                              | Efecto                                            |
-| --------------------------------------------------- | ------------------------------------------------- |
-| `GET_STATUS` / `START_RECORDING` / `STOP_RECORDING` | Estado + start/stop; start puede llevar `profile` |
-| `SET_PREFERRED_PROFILE`                             | Recuerda el perfil elegido en el background       |
-| `MEET_EVENT`                                        | Content → background → host                       |
-| `SET_DIAGNOSTIC` / `GET_DIAGNOSTICS`                | Buffer en memoria                                 |
-| `START_MEET_OBSERVATION` / `STOP_MEET_OBSERVATION`  | Background → content                              |
+| `type`                                              | Efecto                                                                |
+| --------------------------------------------------- | --------------------------------------------------------------------- |
+| `GET_STATUS` / `START_RECORDING` / `STOP_RECORDING` | Estado (incl. `transcribing` + progreso); stop con `transcribe`       |
+|                                                     | Detalle: [`docs/TRANSCRIBE_ON_STOP.md`](./docs/TRANSCRIBE_ON_STOP.md) |
+| `SET_PREFERRED_PROFILE`                             | Recuerda el perfil elegido en el background                           |
+| `MEET_EVENT`                                        | Content → background → host                                           |
+| `SET_DIAGNOSTIC` / `GET_DIAGNOSTICS`                | Buffer en memoria                                                     |
+| `START_MEET_OBSERVATION` / `STOP_MEET_OBSERVATION`  | Background → content                                                  |
 
 Detalle de eventos y fiabilidad: [`docs/MEET_EVENTS.md`](./docs/MEET_EVENTS.md).
 
@@ -77,4 +78,5 @@ Detalle de eventos y fiabilidad: [`docs/MEET_EVENTS.md`](./docs/MEET_EVENTS.md).
 
 - Este repo no inicia FFmpeg ni escribe WAV/MP4.
 - La persistencia de eventos Meet la hará el host al implementar `record_meet_event`.
-- No hay asociación automática con WhisperX en esta versión.
+- WhisperX corre en el host tras `stop_recording` con `transcribe: true`; el
+  progreso se consulta con `get_status` (no hay asociación visual hablante↔WhisperX).

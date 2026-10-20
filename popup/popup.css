@@ -176,6 +176,17 @@ body {
   line-height: 1.35;
 }
 
+.info {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #e7f4ee;
+  color: #1f6f4a;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
 .profile-field {
   display: grid;
   gap: 4px;

@@ -186,6 +186,73 @@ describe("coverage gaps: popup-state/controller", () => {
     });
     assert.equal(hostStatusError.errorMessage, "detalle del host");
 
+    const infoOk = applyBackgroundResult(createInitialState(), {
+      ok: true,
+      transcriptorStatus: "ready",
+      hostMessage: "Grabación guardada en: /tmp/m",
+      sessionId: null,
+    });
+    assert.equal(infoOk.infoMessage, "Grabación guardada en: /tmp/m");
+    assert.equal(infoOk.errorMessage, "");
+
+    const txProgress = applyBackgroundResult(createInitialState(), {
+      ok: true,
+      transcriptorStatus: "transcribing",
+      transcriptionStarted: true,
+      progress: { label: "[ 10.00%] 00:05 / 00:50", percent: 10 },
+      transcribed: false,
+      transcriptionError: null,
+      plainTranscript: null,
+      hostMessage: "Transcribiendo…",
+      sessionId: null,
+    });
+    assert.equal(txProgress.transcriptionStarted, true);
+    assert.equal(txProgress.progress.percent, 10);
+    assert.equal(txProgress.transcriptionError, null);
+    assert.equal(txProgress.plainTranscript, null);
+    assert.equal(
+      derivePopupView(txProgress).transcriptorStatus,
+      TRANSCRIPTOR_STATUS.TRANSCRIBING
+    );
+
+    const txFailed = applyBackgroundResult(txProgress, {
+      ok: true,
+      transcriptorStatus: "ready",
+      progress: null,
+      transcribed: false,
+      plainTranscript: null,
+      transcriptionError: "sin GPU",
+      hostMessage: "falló",
+      sessionId: null,
+    });
+    assert.equal(txFailed.transcriptionError, "sin GPU");
+    assert.equal(txFailed.plainTranscript, null);
+
+    const txCleared = applyBackgroundResult(txProgress, {
+      ok: true,
+      transcriptorStatus: "ready",
+      progress: null,
+      transcribed: true,
+      plainTranscript: "/tmp/t.txt",
+      transcriptionError: 12,
+      hostMessage: "Transcripción lista: /tmp/t.txt",
+      sessionId: null,
+    });
+    // transcriptionError non-string → null
+    assert.equal(txCleared.progress, null);
+    assert.equal(txCleared.plainTranscript, "/tmp/t.txt");
+    assert.equal(txCleared.transcriptionError, null);
+
+    const busyView = derivePopupView(
+      Object.assign(createInitialState(), {
+        busy: true,
+        busyLabel: "Transcribiendo…",
+        transcriptorStatus: TRANSCRIPTOR_STATUS.TRANSCRIBING,
+      })
+    );
+    assert.equal(busyView.busyLabel, "Transcribiendo…");
+    assert.equal(busyView.canStart, false);
+
     const hostOnly = applyBackgroundResult(createInitialState(), {
       ok: false,
       hostMessage: "solo hostMessage",

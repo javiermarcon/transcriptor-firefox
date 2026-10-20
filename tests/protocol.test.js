@@ -180,6 +180,29 @@ describe("protocol", () => {
       }),
       { status: "recording", session_id: "s1" }
     );
+    assert.deepEqual(
+      Protocol.normalizeHostStatus({
+        status: "transcribing",
+        meeting_dir: "/tmp/m",
+        progress: {
+          percent: 10,
+          current_s: 5,
+          total_s: 50,
+          label: "[ 10.00%] 00:05 / 00:50",
+        },
+      }),
+      {
+        status: "transcribing",
+        session_id: null,
+        meeting_dir: "/tmp/m",
+        progress: {
+          percent: 10,
+          current_s: 5,
+          total_s: 50,
+          label: "[ 10.00%] 00:05 / 00:50",
+        },
+      }
+    );
     assert.equal(
       Protocol.normalizeHostStatus({ status: "weird" }).status,
       "ready"
@@ -189,6 +212,32 @@ describe("protocol", () => {
         .message,
       "falló"
     );
+    assert.equal(Protocol.normalizeProgress(null), null);
+    assert.equal(Protocol.normalizeProgress({}), null);
+    assert.deepEqual(Protocol.normalizeProgress({ percent: 1 }), {
+      percent: 1,
+      current_s: null,
+      total_s: null,
+      label: null,
+    });
+    assert.deepEqual(
+      Protocol.normalizeHostStatus({
+        status: "transcribing",
+        meeting_dir: 12,
+      }),
+      {
+        status: "transcribing",
+        session_id: null,
+        meeting_dir: null,
+        progress: null,
+      }
+    );
+    assert.deepEqual(Protocol.normalizeProgress({ label: "  x  " }), {
+      percent: null,
+      current_s: null,
+      total_s: null,
+      label: "x",
+    });
   });
 
   it("no contiene eval ni shell en el módulo de protocolo", () => {

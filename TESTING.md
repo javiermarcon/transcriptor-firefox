@@ -124,7 +124,7 @@ Estas **no** forman parte de `npm test`:
 2. Iniciar grabación desde el popup y confirmar archivos de sesión en el lado del host.
 3. Activar modo diagnóstico y contrastar nombres detectados con la UI de Meet.
 4. Abrir/cerrar el panel de participantes y ver joins/leaves heurísticos.
-5. Detener y verificar que cesa la observación (`Metadatos: Inactiva`) y que no siguen saliendo eventos.
+5. Detener: el popup pregunta si transcribir; con Aceptar debe mostrar progreso (`Transcribiendo… [xx%] …`) vía `get_status` y al final la ruta del transcript. Con Cancelar solo guarda archivos. Observación → `Metadatos: Inactiva`.
 6. Cuando el host implemente `record_meet_event`, verificar persistencia local de la secuencia.
 7. Validar comportamiento si el host se cae a mitad de una grabación.
 

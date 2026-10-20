@@ -236,6 +236,10 @@
           const status = data.status || "ready";
           const hostMessage =
             typeof data.message === "string" ? data.message.trim() : "";
+          const progress =
+            data.progress && typeof data.progress === "object"
+              ? data.progress
+              : null;
           return Object.assign(
             {
               ok: status !== "error",
@@ -243,6 +247,18 @@
               transcriptorStatus: status,
               sessionId: data.session_id || lastSessionId,
               hostMessage,
+              progress,
+              transcribed: Boolean(data.transcribed),
+              transcriptionError:
+                typeof data.transcription_error === "string"
+                  ? data.transcription_error
+                  : null,
+              plainTranscript:
+                typeof data.plain_transcript === "string"
+                  ? data.plain_transcript
+                  : null,
+              meetingDir:
+                typeof data.meeting_dir === "string" ? data.meeting_dir : null,
               observationActive: Boolean(observationTabId),
               diagnosticEnabled,
               observationError: lastObservationError || "",
@@ -459,40 +475,74 @@
 
         await stopObservation();
 
+        const transcribe = Boolean(message && message.transcribe);
         try {
           const response = await client.stopRecording({
             session_id: sessionId,
+            transcribe,
           });
           if (!response.ok) {
-            return {
+            return Object.assign(
+              {
+                ok: false,
+                tab: tabInfo,
+                transcriptorStatus: "error",
+                sessionId,
+                observationActive: false,
+                error: response.error,
+              },
+              profileSnapshot()
+            );
+          }
+
+          lastSessionId = null;
+          const data = response.data || {};
+          const transcriptionStarted = Boolean(data.transcription_started);
+          let hostMessage = "";
+          let transcriptorStatus = "ready";
+          if (transcriptionStarted) {
+            transcriptorStatus = "transcribing";
+            hostMessage = data.meeting_dir
+              ? `Grabación guardada. Transcribiendo… (${data.meeting_dir})`
+              : "Grabación guardada. Transcribiendo…";
+          } else if (transcribe && data.transcribed) {
+            hostMessage = data.plain_transcript
+              ? `Transcripción lista: ${data.plain_transcript}`
+              : "Transcripción lista.";
+          } else if (transcribe && data.transcription_error) {
+            hostMessage = `Grabación detenida, pero falló la transcripción: ${data.transcription_error}`;
+          } else if (data.meeting_dir) {
+            hostMessage = `Grabación guardada en: ${data.meeting_dir}`;
+          }
+
+          return Object.assign(
+            {
+              ok: true,
+              tab: tabInfo,
+              transcriptorStatus,
+              sessionId: null,
+              observationActive: false,
+              diagnosticEnabled,
+              hostMessage,
+              transcribed: Boolean(data.transcribed),
+              transcriptionStarted,
+              meetingDir: data.meeting_dir || null,
+            },
+            profileSnapshot()
+          );
+        } catch (err) {
+          const failure = toErrorPayload(err);
+          return Object.assign(
+            {
               ok: false,
               tab: tabInfo,
               transcriptorStatus: "error",
               sessionId,
               observationActive: false,
-              error: response.error,
-            };
-          }
-
-          lastSessionId = null;
-          return {
-            ok: true,
-            tab: tabInfo,
-            transcriptorStatus: "ready",
-            sessionId: null,
-            observationActive: false,
-            diagnosticEnabled,
-          };
-        } catch (err) {
-          const failure = toErrorPayload(err);
-          return {
-            ok: false,
-            tab: tabInfo,
-            transcriptorStatus: "error",
-            sessionId,
-            observationActive: false,
-            error: failure.error,
-          };
+              error: failure.error,
+            },
+            profileSnapshot()
+          );
         }
       }
 

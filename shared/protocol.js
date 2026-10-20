@@ -189,6 +189,25 @@
     };
   }
 
+  function normalizeProgress(raw) {
+    if (!isObject(raw)) {
+      return null;
+    }
+    const percent = typeof raw.percent === "number" ? raw.percent : null;
+    const currentS = typeof raw.current_s === "number" ? raw.current_s : null;
+    const totalS = typeof raw.total_s === "number" ? raw.total_s : null;
+    const label = typeof raw.label === "string" ? raw.label.trim() : "";
+    if (percent === null && !label) {
+      return null;
+    }
+    return {
+      percent,
+      current_s: currentS,
+      total_s: totalS,
+      label: label || null,
+    };
+  }
+
   function normalizeHostStatus(data) {
     const status = isObject(data) ? data.status : undefined;
     const sessionId =
@@ -198,6 +217,18 @@
 
     if (status === "recording") {
       return { status: "recording", session_id: sessionId };
+    }
+    if (status === "transcribing") {
+      const meetingDir =
+        isObject(data) && typeof data.meeting_dir === "string"
+          ? data.meeting_dir
+          : null;
+      return {
+        status: "transcribing",
+        session_id: sessionId,
+        meeting_dir: meetingDir,
+        progress: normalizeProgress(isObject(data) ? data.progress : null),
+      };
     }
     if (status === "error") {
       return {
@@ -266,6 +297,7 @@
     requireSessionId,
     mapConnectionError,
     normalizeHostStatus,
+    normalizeProgress,
     isValidProfileName,
     normalizeProfilesData,
   };
