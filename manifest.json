@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Meetings Transcriptor",
-  "version": "0.3.0",
-  "description": "Controla el transcriptor local de reuniones desde Google Meet.",
+  "name": "Meetings Transcriptor (host local)",
+  "version": "0.3.1",
+  "description": "Controla un transcriptor LOCAL de Google Meet. Requiere el host com.meetings.transcriptor (repo companion). No sube audio a internet.",
   "browser_specific_settings": {
     "gecko": {
       "id": "meetings-transcriptor@example.org",
@@ -14,7 +14,7 @@
     "96": "icons/icon-96.png"
   },
   "action": {
-    "default_title": "Meetings Transcriptor",
+    "default_title": "Meetings Transcriptor (host local)",
     "default_popup": "popup/popup.html",
     "default_icon": {
       "48": "icons/icon-48.png",

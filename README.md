@@ -156,6 +156,7 @@ Debe incluir `meetings-transcriptor@example.org` en `allowed_extensions`.
 - [`TESTING.md`](./TESTING.md) — pruebas y calidad
 - [`CONTRIBUTING.md`](./CONTRIBUTING.md) — flujo de contribución
 - [`docs/MEET_EVENTS.md`](./docs/MEET_EVENTS.md) — eventos Meet, contrato `record_meet_event` y fiabilidad
+- [`docs/AMO_LISTING.md`](./docs/AMO_LISTING.md) — texto listo para addons.mozilla.org (listed)
 
 ## Estructura
 

@@ -1,6 +1,6 @@
 # Arquitectura
 
-Documento de la arquitectura **efectiva** de la extensión v0.3.0.
+Documento de la arquitectura **efectiva** de la extensión v0.3.1.
 
 ## Vista general
 
