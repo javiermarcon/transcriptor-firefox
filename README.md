@@ -61,7 +61,7 @@ Hasta validar un host real, no se debe asumir que una grabación de reunión com
 
 ## Requisitos
 
-- Firefox 121+ (Manifest V3 con `background.page`).
+- Firefox 140+ (Manifest V3; `data_collection_permissions` de AMO).
 - El host del repo [`transcriptor`](https://github.com/javiermarcon/transcriptor) instalado y registrado (`com.meetings.transcriptor`), para grabar/transcribir.
 - Node.js ≥ 18 y npm (solo desarrollo / calidad).
 - `pre-commit` (hooks Git de desarrollo).

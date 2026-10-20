@@ -15,18 +15,15 @@ Desde nov. 2025 AMO exige en `manifest.json`:
 
 Sin eso falla el upload con _The 'data_collection_permissions' property is missing_
 y **no** llega al formulario de descripción (Edit Product Page).
-La descripción larga se edita en **Edit Product Page** del add-on ya creado,
-no en el primer paso de subir el archivo.
+La descripción larga se edita en **Edit Product Page** → Description → **Edit**.
+
 Fuente: este repo + host obligatorio
-[`javiermarcon/transcriptor`](https://github.com/javiermarcon/transcriptor).
+[javiermarcon/transcriptor](https://github.com/javiermarcon/transcriptor).
 
 ## Nombre sugerido (≤ ~50 caracteres)
 
-**ES:** `Meetings Transcriptor (host local)`
-
-**EN:** `Meetings Transcriptor (local host)`
-
-Evitar nombres que suenen a “transcribe in the cloud” o “AI Meet add-on” sin aclarar el host.
+- **ES:** `Meetings Transcriptor (host local)`
+- **EN:** `Meetings Transcriptor (local host)`
 
 ## Resumen / Summary (≤ ~250 caracteres)
 
@@ -46,195 +43,107 @@ com.meetings.transcriptor. Does not upload audio to the internet.
 
 ## Descripción completa (ES) — pegar en AMO
 
-```html
-<p>
-  <strong>Importante: esta extensión no graba ni transcribe sola.</strong>
-  Necesita software local instalado en tu PC: el host Native Messaging del
-  proyecto
-  <a href="https://github.com/javiermarcon/transcriptor"
-    >javiermarcon/transcriptor</a
-  >
-  (<code>com.meetings.transcriptor</code>). Sin ese host verás “Desconectado” y
-  no habrá grabación.
-</p>
+AMO solo admite Markdown limitado (negrita, cursiva, links, listas, code).
+**No uses `#` títulos.** En Description → Edit, pegá exactamente:
 
-<h3>Qué hace</h3>
-<ul>
-  <li>
-    Popup para iniciar/detener grabación en pestañas
-    <code>https://meet.google.com/…</code>.
-  </li>
-  <li>
-    Al detener, pregunta si transcribir ahora (WhisperX en tu máquina) y muestra
-    progreso.
-  </li>
-  <li>Selector de perfil de grabación (cuando el host lista perfiles).</li>
-  <li>
-    Metadatos visibles de participantes/hablante (heurístico) enviados solo al
-    host local.
-  </li>
-</ul>
+````
+**Importante: esta extensión no graba ni transcribe sola.**
 
-<h3>Qué NO hace</h3>
-<ul>
-  <li>No ejecuta FFmpeg ni WhisperX dentro de Firefox.</li>
-  <li>No sube audio, video ni reuniones a internet.</li>
-  <li>No envía datos a servidores remotos de terceros.</li>
-  <li>No instala el host por sí misma.</li>
-</ul>
+Necesita software local en tu PC: el host Native Messaging del proyecto [javiermarcon/transcriptor](https://github.com/javiermarcon/transcriptor) (`com.meetings.transcriptor`). Sin ese host verás “Desconectado” y no habrá grabación.
 
-<h3>Instalación del host (obligatorio)</h3>
-<ol>
-  <li>
-    Cloná e instalá
-    <a href="https://github.com/javiermarcon/transcriptor"
-      >https://github.com/javiermarcon/transcriptor</a
-    >
-    (venv, dependencias, GPU/CPU según el README).
-  </li>
-  <li>
-    Registrá el host Native Messaging:
-    <pre>
-./scripts/native-messaging.sh install
-./scripts/native-messaging.sh verify</pre>
-  </li>
-  <li>Reiniciá Firefox e instalá/actualizá esta extensión.</li>
-</ol>
+**Qué hace**
 
-<h3>Configuración básica (en el host, no en la extensión)</h3>
-<ul>
-  <li>
-    <strong>HF_TOKEN</strong>: token de Hugging Face en
-    <code>~/.config/meetings-transcriptor.env</code> (necesario para diarización
-    WhisperX).
-  </li>
-  <li>
-    <strong>DEVICE / GPU</strong>: <code>DEVICE=auto</code>, <code>cuda</code> o
-    <code>cpu</code> en el mismo archivo (detalle en el README del
-    transcriptor).
-  </li>
-  <li>
-    <strong>Perfil</strong>: carpetas de perfil en el directorio de reuniones
-    del host; la extensión solo elige el nombre vía <code>list_profiles</code>.
-  </li>
-</ul>
+- Popup para iniciar/detener grabación en pestañas `https://meet.google.com/…`.
+- Al detener, pregunta si transcribir ahora (WhisperX en tu máquina) y muestra progreso.
+- Selector de perfil de grabación (cuando el host lista perfiles).
+- Metadatos visibles de participantes/hablante (heurístico) enviados solo al host local.
 
-<p>
-  Documentación del host:
-  <a href="https://github.com/javiermarcon/transcriptor"
-    >github.com/javiermarcon/transcriptor</a
-  >. Código de la extensión:
-  <a href="https://github.com/javiermarcon/transcriptor-firefox"
-    >github.com/javiermarcon/transcriptor-firefox</a
-  >
-  (licencia MIT).
-</p>
+**Qué NO hace**
 
-<h3>Permisos (mínimos)</h3>
-<ul>
-  <li>
-    <code>nativeMessaging</code> — hablar solo con
-    <code>com.meetings.transcriptor</code>.
-  </li>
-  <li>
-    <code>activeTab</code> — leer URL/título de la pestaña activa al usar el
-    popup.
-  </li>
-  <li>
-    Host permission solo <code>https://meet.google.com/*</code> (content
-    script).
-  </li>
-</ul>
+- No ejecuta FFmpeg ni WhisperX dentro de Firefox.
+- No sube audio, video ni reuniones a internet.
+- No envía datos a servidores remotos de terceros.
+- No instala el host por sí misma.
 
-<p>
-  Privacidad: todo el procesamiento de audio queda en tu máquina a cargo del
-  host local.
-</p>
+**Instalación del host (obligatorio)**
+
+1. Cloná e instalá [javiermarcon/transcriptor](https://github.com/javiermarcon/transcriptor) (venv, dependencias, GPU/CPU según el README).
+2. Registrá el host Native Messaging:
+
 ```
+./scripts/native-messaging.sh install
+./scripts/native-messaging.sh verify
+```
+
+3. Reiniciá Firefox e instalá/actualizá esta extensión.
+
+**Configuración básica (en el host, no en la extensión)**
+
+- **HF_TOKEN**: token de Hugging Face en `~/.config/meetings-transcriptor.env` (necesario para diarización WhisperX).
+- **DEVICE / GPU**: `DEVICE=auto`, `cuda` o `cpu` en el mismo archivo (detalle en el README del transcriptor).
+- **Perfil**: carpetas de perfil en el directorio de reuniones del host; la extensión solo elige el nombre vía `list_profiles`.
+
+Documentación del host: [github.com/javiermarcon/transcriptor](https://github.com/javiermarcon/transcriptor).
+Código de la extensión: [github.com/javiermarcon/transcriptor-firefox](https://github.com/javiermarcon/transcriptor-firefox) (licencia MIT).
+
+**Permisos (mínimos)**
+
+- `nativeMessaging` — hablar solo con `com.meetings.transcriptor`.
+- `activeTab` — leer URL/título de la pestaña activa al usar el popup.
+- Host permission solo `https://meet.google.com/*` (content script).
+
+Privacidad: el procesamiento de audio queda en tu máquina, a cargo del host local.
+````
 
 ## Descripción completa (EN) — opcional
 
-```html
-<p>
-  <strong
-    >Important: this add-on does not record or transcribe by itself.</strong
-  >
-  It requires local software: the Native Messaging host from
-  <a href="https://github.com/javiermarcon/transcriptor"
-    >javiermarcon/transcriptor</a
-  >
-  (<code>com.meetings.transcriptor</code>). Without that host you will see
-  “Disconnected” and recording will not work.
-</p>
+````
+**Important: this add-on does not record or transcribe by itself.**
 
-<h3>What it does</h3>
-<ul>
-  <li>
-    Popup to start/stop recording on
-    <code>https://meet.google.com/…</code> tabs.
-  </li>
-  <li>
-    On stop, asks whether to transcribe now (WhisperX on your machine) and shows
-    progress.
-  </li>
-  <li>Recording profile picker (when the host lists profiles).</li>
-  <li>
-    Visible Meet participant/speaker metadata (heuristic), sent only to the
-    local host.
-  </li>
-</ul>
+It requires local software: the Native Messaging host from [javiermarcon/transcriptor](https://github.com/javiermarcon/transcriptor) (`com.meetings.transcriptor`). Without that host you will see “Disconnected” and recording will not work.
 
-<h3>What it does NOT do</h3>
-<ul>
-  <li>Does not run FFmpeg or WhisperX inside Firefox.</li>
-  <li>Does not upload audio, video, or meetings to the internet.</li>
-  <li>Does not send data to third-party remote servers.</li>
-  <li>Does not install the host by itself.</li>
-</ul>
+**What it does**
 
-<h3>Required host setup</h3>
-<ol>
-  <li>
-    Install
-    <a href="https://github.com/javiermarcon/transcriptor"
-      >https://github.com/javiermarcon/transcriptor</a
-    >
-    (venv, dependencies, GPU/CPU per its README).
-  </li>
-  <li>
-    Register the Native Messaging host:
-    <pre>
-./scripts/native-messaging.sh install
-./scripts/native-messaging.sh verify</pre>
-  </li>
-  <li>Restart Firefox and install/update this add-on.</li>
-</ol>
+- Popup to start/stop recording on `https://meet.google.com/…` tabs.
+- On stop, asks whether to transcribe now (WhisperX on your machine) and shows progress.
+- Recording profile picker (when the host lists profiles).
+- Visible Meet participant/speaker metadata (heuristic), sent only to the local host.
 
-<h3>Configuration (on the host, not in the add-on)</h3>
-<ul>
-  <li>
-    <strong>HF_TOKEN</strong> in
-    <code>~/.config/meetings-transcriptor.env</code>.
-  </li>
-  <li>
-    <strong>DEVICE</strong>: <code>auto</code>, <code>cuda</code>, or
-    <code>cpu</code>.
-  </li>
-  <li>
-    <strong>Profile</strong>: meeting profiles live on the host; the add-on only
-    selects a name.
-  </li>
-</ul>
+**What it does NOT do**
 
-<p>
-  MIT source:
-  <a href="https://github.com/javiermarcon/transcriptor-firefox"
-    >transcriptor-firefox</a
-  >
-  +
-  <a href="https://github.com/javiermarcon/transcriptor">transcriptor</a>.
-</p>
+- Does not run FFmpeg or WhisperX inside Firefox.
+- Does not upload audio, video, or meetings to the internet.
+- Does not send data to third-party remote servers.
+- Does not install the host by itself.
+
+**Required host setup**
+
+1. Install [javiermarcon/transcriptor](https://github.com/javiermarcon/transcriptor) (venv, dependencies, GPU/CPU per its README).
+2. Register the Native Messaging host:
+
 ```
+./scripts/native-messaging.sh install
+./scripts/native-messaging.sh verify
+```
+
+3. Restart Firefox and install/update this add-on.
+
+**Configuration (on the host, not in the add-on)**
+
+- **HF_TOKEN** in `~/.config/meetings-transcriptor.env`.
+- **DEVICE**: `auto`, `cuda`, or `cpu`.
+- **Profile**: meeting profiles live on the host; the add-on only selects a name.
+
+MIT source: [transcriptor-firefox](https://github.com/javiermarcon/transcriptor-firefox) + [transcriptor](https://github.com/javiermarcon/transcriptor).
+
+**Minimal permissions**
+
+- `nativeMessaging` — talk only to `com.meetings.transcriptor`.
+- `activeTab` — read active tab URL/title when opening the popup.
+- Host permission only `https://meet.google.com/*`.
+
+Privacy: audio processing stays on your machine via the local host.
+````
 
 ## Categorías / etiquetas sugeridas
 
@@ -244,8 +153,8 @@ com.meetings.transcriptor. Does not upload audio to the internet.
 ## Checklist al publicar listed
 
 - [ ] Nombre y summary mencionan **host / software local**.
-- [ ] Primer párrafo de la descripción: “no funciona sola”.
+- [ ] Description (Markdown) pegada desde este archivo.
 - [ ] Links a ambos repos GitHub.
-- [ ] Política de privacidad / texto: no sube audio.
-- [ ] Capturas: popup desconectado + popup grabando (opcional).
-- [ ] Tras cambiar `name`/`description` en `manifest.json`, regenerar `.xpi` firmado (nueva versión).
+- [ ] Homepage / Contributions opcionales.
+- [ ] `strict_min_version` ≥ `140.0` (y `gecko_android` ≥ `142.0`) si usás `data_collection_permissions`.
+- [ ] Tras cambiar `name`/`description` en `manifest.json`, subir **New Version** (p. ej. 0.3.3+).

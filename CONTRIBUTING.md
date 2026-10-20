@@ -10,7 +10,7 @@ npm install
 pre-commit install   # recomendado si vas a commitear
 ```
 
-Requisitos: Node.js ≥ 18, npm, Firefox 121+ para pruebas manuales, `pre-commit` para hooks.
+Requisitos: Node.js ≥ 18, npm, Firefox 140+ para pruebas manuales, `pre-commit` para hooks.
 
 ## 2. Crear o modificar pruebas
 
