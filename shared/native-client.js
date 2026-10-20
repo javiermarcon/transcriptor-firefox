@@ -122,7 +122,19 @@
       return connecting;
     }
 
-    function request(action, payload = {}, requestOptions = {}) {
+    function forceDropPort() {
+      const old = port;
+      cleanupPort();
+      if (old && typeof old.disconnect === "function") {
+        try {
+          old.disconnect();
+        } catch (_err) {
+          // ignore
+        }
+      }
+    }
+
+    function requestOnce(action, payload, requestOptions) {
       const req = protocol.buildRequest(action, payload, {
         generateId: requestOptions.generateId || options.generateId,
       });
@@ -133,6 +145,9 @@
           new Promise((resolve, reject) => {
             const timer = setTimeout(() => {
               pending.delete(req.request_id);
+              // El event page de Firefox puede dejar un puerto zombie mientras
+              // el host quedó bloqueado (p. ej. wait de FFmpeg). Soltarlo.
+              forceDropPort();
               reject(
                 Object.assign(new Error(protocol.ERROR_MESSAGES.TIMEOUT), {
                   code: "TIMEOUT",
@@ -147,11 +162,34 @@
             } catch (err) {
               pending.delete(req.request_id);
               clearTimeout(timer);
+              forceDropPort();
               const mapped = protocol.mapConnectionError(err);
               reject(Object.assign(new Error(mapped.message), mapped));
             }
           })
       );
+    }
+
+    function request(action, payload = {}, requestOptions = {}) {
+      const allowRetry = requestOptions.retryOnTimeout !== false;
+      return requestOnce(action, payload, requestOptions).catch((err) => {
+        if (
+          allowRetry &&
+          err &&
+          err.code === "TIMEOUT" &&
+          !requestOptions._retried
+        ) {
+          return requestOnce(
+            action,
+            payload,
+            Object.assign({}, requestOptions, {
+              _retried: true,
+              retryOnTimeout: false,
+            })
+          );
+        }
+        throw err;
+      });
     }
 
     function getStatus(requestOptions) {

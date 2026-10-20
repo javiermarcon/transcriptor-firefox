@@ -87,8 +87,19 @@
         next.profilesError = result.profilesError;
       }
 
+      const hostMessage =
+        typeof result.hostMessage === "string" ? result.hostMessage.trim() : "";
+
       if (result.ok) {
-        next.errorMessage = "";
+        if (
+          next.transcriptorStatus === api.TRANSCRIPTOR_STATUS.ERROR &&
+          hostMessage
+        ) {
+          // El host puede responder ok:true con status "error" y un mensaje.
+          next.errorMessage = hostMessage;
+        } else {
+          next.errorMessage = "";
+        }
       } else if (result.error && result.error.message) {
         next.errorMessage = result.error.message;
         if (
@@ -101,6 +112,10 @@
           next.transcriptorStatus =
             result.transcriptorStatus || api.TRANSCRIPTOR_STATUS.ERROR;
         }
+      } else if (hostMessage) {
+        next.errorMessage = hostMessage;
+        next.transcriptorStatus =
+          result.transcriptorStatus || api.TRANSCRIPTOR_STATUS.ERROR;
       } else {
         next.errorMessage = "Ocurrió un error al hablar con el host local.";
         next.transcriptorStatus = api.TRANSCRIPTOR_STATUS.ERROR;

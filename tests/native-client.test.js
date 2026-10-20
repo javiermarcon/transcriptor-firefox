@@ -2,7 +2,11 @@ const { describe, it } = require("node:test");
 const assert = require("node:assert/strict");
 const Protocol = require("../shared/protocol.js");
 const { createNativeClient } = require("../shared/native-client.js");
-const { createFakePort, waitForSent } = require("./helpers/fake-port.js");
+const {
+  createFakePort,
+  waitForSent,
+  waitForSentMs,
+} = require("./helpers/fake-port.js");
 
 describe("native-client", () => {
   it("no marca grabación iniciada sin session_id del host", async () => {
@@ -103,27 +107,57 @@ describe("native-client", () => {
   });
 
   it("ignora respuestas con request_id distinto y aplica timeout", async () => {
-    const port = createFakePort();
+    let connects = 0;
+    let ids = 0;
+    const ports = [createFakePort(), createFakePort()];
     const client = createNativeClient({
       protocol: Protocol,
-      connectNative: () => port,
-      generateId: () => "status-1",
+      connectNative: () => ports[Math.min(connects++, ports.length - 1)],
+      generateId: () => `status-${++ids}`,
       timeoutMs: 30,
     });
 
     const pending = client.getStatus();
-    await waitForSent(port, 1);
+    await waitForSent(ports[0], 1);
 
-    port.emitMessage({
+    ports[0].emitMessage({
       protocol_version: 1,
       request_id: "otro",
       ok: true,
       data: { status: "ready" },
     });
-    port.emitMessage(null);
-    port.emitMessage("no-json");
+    ports[0].emitMessage(null);
+    ports[0].emitMessage("no-json");
 
+    // Tras el timeout del primer intento reintenta en un puerto nuevo.
+    await waitForSentMs(ports[1], 1, 500);
     await assert.rejects(pending, (err) => err.code === "TIMEOUT");
+    assert.equal(connects, 2);
+  });
+
+  it("reintenta una vez tras TIMEOUT y recupera el puerto", async () => {
+    let connects = 0;
+    let ids = 0;
+    const ports = [createFakePort(), createFakePort()];
+    const client = createNativeClient({
+      protocol: Protocol,
+      connectNative: () => ports[connects++],
+      generateId: () => `retry-${++ids}`,
+      timeoutMs: 30,
+    });
+
+    const pending = client.getStatus();
+    await waitForSent(ports[0], 1);
+    await waitForSentMs(ports[1], 1, 500);
+    ports[1].emitMessage({
+      protocol_version: 1,
+      request_id: "retry-2",
+      ok: true,
+      data: { status: "ready" },
+    });
+    const result = await pending;
+    assert.equal(result.ok, true);
+    assert.equal(result.data.status, "ready");
   });
 
   it("propaga desconexión del host a solicitudes pendientes", async () => {

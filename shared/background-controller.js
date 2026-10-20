@@ -233,16 +233,28 @@
           }
 
           const profiles = await refreshProfiles();
+          const status = data.status || "ready";
+          const hostMessage =
+            typeof data.message === "string" ? data.message.trim() : "";
           return Object.assign(
             {
-              ok: true,
+              ok: status !== "error",
               tab: tabInfo,
-              transcriptorStatus: data.status || "ready",
+              transcriptorStatus: status,
               sessionId: data.session_id || lastSessionId,
-              hostMessage: data.message || "",
+              hostMessage,
               observationActive: Boolean(observationTabId),
               diagnosticEnabled,
               observationError: lastObservationError || "",
+              error:
+                status === "error"
+                  ? {
+                      code: "HOST_STATUS_ERROR",
+                      message:
+                        hostMessage ||
+                        "El transcriptor reportó un estado de error.",
+                    }
+                  : undefined,
             },
             profiles
           );

@@ -10,6 +10,19 @@ async function waitForSent(port, count = 1, attempts = 40) {
   );
 }
 
+async function waitForSentMs(port, count = 1, timeoutMs = 500) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (port.sent.length >= count) {
+      return port.sent;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+  throw new Error(
+    `Se esperaban ${count} mensajes enviados en ${timeoutMs}ms, hay ${port.sent.length}`
+  );
+}
+
 function createFakePort() {
   const messageListeners = [];
   const disconnectListeners = [];
@@ -68,4 +81,4 @@ function createFakePort() {
   };
 }
 
-module.exports = { createFakePort, waitForSent };
+module.exports = { createFakePort, waitForSent, waitForSentMs };

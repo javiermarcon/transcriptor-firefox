@@ -178,6 +178,21 @@ describe("coverage gaps: popup-state/controller", () => {
       "Observando Meet"
     );
 
+    const hostStatusError = applyBackgroundResult(createInitialState(), {
+      ok: true,
+      transcriptorStatus: "error",
+      hostMessage: "detalle del host",
+      sessionId: null,
+    });
+    assert.equal(hostStatusError.errorMessage, "detalle del host");
+
+    const hostOnly = applyBackgroundResult(createInitialState(), {
+      ok: false,
+      hostMessage: "solo hostMessage",
+    });
+    assert.equal(hostOnly.errorMessage, "solo hostMessage");
+    assert.equal(hostOnly.transcriptorStatus, "error");
+
     const noMessage = applyBackgroundResult(createInitialState(), {
       ok: false,
       tab: {
@@ -261,6 +276,41 @@ describe("coverage gaps: background-controller", () => {
     assert.equal(recording.transcriptorStatus, "recording");
     assert.equal(recording.sessionId, "sess-live");
     assert.equal(recording.hostMessage, "ok");
+
+    const hostErrorStatus = createBackgroundController({
+      protocol: Protocol,
+      meetTab: MeetTab,
+      client: {
+        getStatus: async () => ({
+          ok: true,
+          data: { status: "error", message: "ffmpeg cayó" },
+        }),
+        startRecording: async () => ({ ok: true, data: { session_id: "x" } }),
+        stopRecording: async () => ({ ok: true, data: {} }),
+      },
+      getActiveTab: async () => meetTab(),
+    });
+    const hostErr = await hostErrorStatus.handleGetStatus();
+    assert.equal(hostErr.ok, false);
+    assert.equal(hostErr.transcriptorStatus, "error");
+    assert.equal(hostErr.error.code, "HOST_STATUS_ERROR");
+    assert.match(hostErr.error.message, /ffmpeg/);
+
+    const hostErrorNoMsg = createBackgroundController({
+      protocol: Protocol,
+      meetTab: MeetTab,
+      client: {
+        getStatus: async () => ({
+          ok: true,
+          data: { status: "error" },
+        }),
+        startRecording: async () => ({ ok: true, data: { session_id: "x" } }),
+        stopRecording: async () => ({ ok: true, data: {} }),
+      },
+      getActiveTab: async () => meetTab(),
+    });
+    const hostErrBare = await hostErrorNoMsg.handleGetStatus();
+    assert.match(hostErrBare.error.message, /estado de error/);
 
     const failedStatus = createBackgroundController({
       protocol: Protocol,
