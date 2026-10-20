@@ -2,7 +2,25 @@
 
 Extensión Firefox para **controlar** un transcriptor local de reuniones de Google Meet mediante Native Messaging.
 
+**Licencia:** [MIT](./LICENSE).
+
 ID fijo: `meetings-transcriptor@example.org`.
+
+## Requisito obligatorio: host local (transcriptor)
+
+Esta extensión **no graba ni transcribe por sí sola**. Solo habla con un host Native Messaging.
+
+Para usarla de verdad necesitás el proyecto compañero:
+
+- **Transcriptor (host Python + WhisperX + Native Messaging):**
+  [`https://github.com/javiermarcon/transcriptor`](https://github.com/javiermarcon/transcriptor)
+
+Allí instalás el entorno, el host `com.meetings.transcriptor` (`./scripts/native-messaging.sh install`) y la lógica de FFmpeg/WhisperX. Sin ese host, el popup abre en estado **Desconectado** y no hay grabación.
+
+| Pieza                         | Repo                                                                                        |
+| ----------------------------- | ------------------------------------------------------------------------------------------- |
+| Extensión Firefox (este repo) | [`javiermarcon/transcriptor-firefox`](https://github.com/javiermarcon/transcriptor-firefox) |
+| Transcriptor / host nativo    | [`javiermarcon/transcriptor`](https://github.com/javiermarcon/transcriptor)                 |
 
 ## Propósito y alcance actual
 
@@ -22,7 +40,7 @@ La extensión **no**:
 - Ejecuta FFmpeg ni lógica de transcripción.
 - Asocia automáticamente hablantes visuales con segmentos de WhisperX.
 - Envía audio, video o datos a servicios remotos.
-- Instala el host nativo por sí misma.
+- Instala el host nativo por sí misma (eso lo hace el repo [`transcriptor`](https://github.com/javiermarcon/transcriptor)).
 
 ## Estado real de implementación
 
@@ -44,9 +62,19 @@ Hasta validar un host real, no se debe asumir que una grabación de reunión com
 ## Requisitos
 
 - Firefox 121+ (Manifest V3 con `background.page`).
-- Node.js ≥ 18 y npm (desarrollo / calidad).
+- El host del repo [`transcriptor`](https://github.com/javiermarcon/transcriptor) instalado y registrado (`com.meetings.transcriptor`), para grabar/transcribir.
+- Node.js ≥ 18 y npm (solo desarrollo / calidad).
 - `pre-commit` (hooks Git de desarrollo).
-- Host `com.meetings.transcriptor` (opcional para UI; obligatorio para grabar de verdad).
+
+## Instalación para usuarios
+
+1. Instalá y registrá el host siguiendo el README de
+   [`javiermarcon/transcriptor`](https://github.com/javiermarcon/transcriptor)
+   (venv, dependencias, `./scripts/native-messaging.sh install`).
+2. Instalá esta extensión desde AMO (cuando esté publicada) o el `.xpi` firmado.
+3. Abrí Google Meet, usá el popup para iniciar/detener y, al detener, elegí si transcribir.
+
+Sin el paso 1, la extensión no puede grabar.
 
 ## Instalación de dependencias de desarrollo
 
@@ -55,7 +83,7 @@ npm install
 pre-commit install   # una vez por clone, si vas a crear commits
 ```
 
-## Carga temporal en Firefox
+## Carga temporal en Firefox (desarrollo)
 
 1. Abrí `about:debugging#/runtime/this-firefox`.
 2. **Cargar complemento temporal…** y elegí `manifest.json`.
@@ -66,7 +94,7 @@ Firefox puede mostrar _“This WebExtension has a temporary ID”_ aunque el **E
 
 Tras cambiar código: en about:debugging pulsá **Reload** en la extensión y volvé a abrir el popup. Si el background figura como _Stopped_, abrí el popup otra vez (el event page MV3 se detiene en idle).
 
-No se instala automáticamente en el perfil.
+Para instalación permanente usá el `.xpi` firmado / AMO (listed), no `about:debugging`.
 
 ## Pruebas y controles de calidad
 
@@ -96,7 +124,15 @@ Si Firefox no encuentra `com.meetings.transcriptor`:
 - estado **Desconectado** + mensaje en español;
 - no se simula una grabación activa.
 
-Registro típico del manifiesto nativo (lo provee el proyecto del host):
+Instalá/verificá el host desde [`javiermarcon/transcriptor`](https://github.com/javiermarcon/transcriptor):
+
+```bash
+cd /ruta/a/transcriptor
+./scripts/native-messaging.sh install
+./scripts/native-messaging.sh verify
+```
+
+Registro típico del manifiesto nativo:
 
 ```text
 ~/.mozilla/native-messaging-hosts/com.meetings.transcriptor.json
@@ -126,6 +162,7 @@ Debe incluir `meetings-transcriptor@example.org` en `allowed_extensions`.
 ```text
 transcriptor-firefox/
 ├── manifest.json
+├── LICENSE          # MIT
 ├── background/
 ├── popup/
 ├── shared/          # lógica testeable (protocolo, cliente, UI state, controllers)
@@ -134,3 +171,7 @@ transcriptor-firefox/
 ├── icons/
 └── docs de ingeniería (*.md)
 ```
+
+## Licencia
+
+[MIT](./LICENSE) © 2026 Javier Marcon.

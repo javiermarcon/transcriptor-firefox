@@ -2,6 +2,10 @@
 
 Modelo de seguridad de la extensión v0.3.0 según el código actual.
 
+La grabación y la transcripción las realiza el host local del repo compañero
+[`javiermarcon/transcriptor`](https://github.com/javiermarcon/transcriptor)
+(MIT). Esta extensión solo envía mensajes JSON controlados por Native Messaging.
+
 ## Permisos solicitados
 
 | Permiso                                       | Por qué                                                  |

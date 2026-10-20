@@ -7,5 +7,6 @@ coverage/
 *.lcov
 web-ext-artifacts/
 *.xpi
+.amo-upload-uuid
 .eslintcache
 .pre-commit-cache/

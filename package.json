@@ -2,7 +2,12 @@
   "name": "meetings-transcriptor-firefox",
   "version": "0.3.0",
   "private": true,
+  "license": "MIT",
   "description": "Extensión Firefox para controlar el transcriptor local de reuniones",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/javiermarcon/transcriptor-firefox.git"
+  },
   "scripts": {
     "test": "node --test tests/*.test.js",
     "test:coverage": "c8 node --test tests/*.test.js",
