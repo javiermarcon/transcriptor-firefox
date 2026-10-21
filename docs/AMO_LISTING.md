@@ -157,4 +157,6 @@ Privacy: audio processing stays on your machine via the local host.
 - [ ] Links a ambos repos GitHub.
 - [ ] Homepage / Contributions opcionales.
 - [ ] `strict_min_version` ≥ `140.0` (y `gecko_android` ≥ `142.0`) si usás `data_collection_permissions`.
-- [ ] Tras cambiar `name`/`description` en `manifest.json`, subir **New Version** (p. ej. 0.3.3+).
+- [ ] Tras cambiar `name`/`description` en `manifest.json`, subir **New Version**.
+- [ ] En “Where to Host Version”, si dice **On your own**, pulsá **Change** y elegí
+      listarlo **On this site** (listed) antes de Continue.
