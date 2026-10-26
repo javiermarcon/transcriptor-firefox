@@ -69,17 +69,21 @@ node --test tests/coverage-gaps.test.js
 - Orquestación background (start/stop/get) con cliente falso.
 - Invariantes del manifest y ausencia de dependencia `chrome.*`.
 - Diffs de participantes/hablante y lifecycle de observación (`tests/meet-events.test.js` + fixtures HTML).
+- Contrato sintético de eventos Meet (`tests/fixtures/synthetic-meet-events.json` +
+  `tests/synthetic-meet-contract.test.js`; **no** son capturas reales de Meet).
 
 ### Integración local (manual o semi-manual)
 
 - Cargar la extensión temporalmente en Firefox.
 - Abrir el popup con y sin host registrado.
 - Verificar mensajes en español cuando el host no existe.
-- Con diagnóstico activo, ver eventos detectados durante una grabación (el host puede aún no persistirlos).
+- Con diagnóstico activo, ver eventos detectados durante una grabación.
+- El host Python persiste `record_meet_event` en `meet_events.jsonl` (ver repo
+  `transcriptor`, `docs/VALIDATION.md`).
 
 ### Manual pendiente (reunión real)
 
-Ver sección final.
+Ver sección final y `../transcriptor/docs/VALIDATION.md` si el clone está al lado.
 
 ## Native Messaging con host simulado
 
@@ -125,8 +129,11 @@ Estas **no** forman parte de `npm test`:
 3. Activar modo diagnóstico y contrastar nombres detectados con la UI de Meet.
 4. Abrir/cerrar el panel de participantes y ver joins/leaves heurísticos.
 5. Detener: el popup pregunta si transcribir; con Aceptar debe mostrar progreso (`Transcribiendo… [xx%] …`) vía `get_status` y al final la ruta del transcript. Con Cancelar solo guarda archivos. Observación → `Metadatos: Inactiva`.
-6. Cuando el host implemente `record_meet_event`, verificar persistencia local de la secuencia.
+6. Verificar persistencia local de la secuencia en `meet_events.jsonl` del host
+   (`$BASE_DIR/<perfil>/Reunion_…/`).
 7. Validar comportamiento si el host se cae a mitad de una grabación.
+8. Guía unipersonal (Meet solo / segunda cuenta propia): ver
+   `transcriptor/docs/VALIDATION.md` en el repo del host.
 
 ## pre-commit
 
